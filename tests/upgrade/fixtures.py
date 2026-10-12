@@ -47,6 +47,11 @@ class Fixtures:
             "--wait", "--timeout", "5m",
         ], check=True)
         deployment = self.get("deployments", "-n", self.namespace)["items"][0]
+        # Chart 0.11.0 omits the GC variable when false; set it explicitly for this baseline case.
+        self.kubectl("set", "env", "-n", self.namespace, "deployment/" + deployment["metadata"]["name"],
+            "OPENEBS_IO_NFS_SERVER_GARBAGE_COLLECTION_ENABLED=" + self.args.gc)
+        self.kubectl("rollout", "status", "-n", self.namespace,
+            "deployment/" + deployment["metadata"]["name"], "--timeout=5m")
         self.apply({"apiVersion": "v1", "kind": "ServiceAccount", "metadata": {
             "name": deployment["spec"]["template"]["spec"]["serviceAccountName"],
             "namespace": self.servers}})

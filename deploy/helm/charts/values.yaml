@@ -14,11 +14,16 @@ serviceAccount:
 rbac:
   # rbac.create: `true` if rbac resources should be created
   create: true
-  # rbac.pspEnabled: `true` if PodSecurityPolicy resources should be created
+  # Deprecated: must remain false; use Pod Security Admission instead.
   pspEnabled: false
 
-podSecurityContext: {}
-# fsGroup: 2000
+# Applies only to the controller, which does not need root or extra capabilities.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
 
 imagePullSecrets:
 # - name: image-pull-secret
@@ -38,6 +43,8 @@ nfsProvisioner:
     registry:
     repository: openebs/provisioner-nfs
     tag:
+    # Optional immutable image digest; overrides tag when set.
+    digest: ""
     pullPolicy: IfNotPresent
   enableLeaderElection: "true"
   # Provide a switch to turn off the function of clearing stale pvc to avoid
@@ -50,6 +57,8 @@ nfsProvisioner:
     registry:
     repository: openebs/nfs-server-alpine
     tag:
+    # Optional immutable image digest; overrides tag when set.
+    digest: ""
   resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -65,7 +74,13 @@ nfsProvisioner:
   #   limits:
   #     cpu: 200m
   #     memory: 200Mi
-  # If set to false, containers created by the nfs provisioner will run without extra privileges.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+  # Deprecated: kernel NFS servers require privileged mode; false is rejected.
+  # This value does not control the controller's securityContext.
   privileged: true
   nodeSelector: {}
   tolerations: []

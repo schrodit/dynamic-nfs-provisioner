@@ -29,3 +29,12 @@ This records evidence for the six phases in update-plan.md. Local execution uses
 - Cross-built the actual provisioner binary for Linux amd64, arm64, arm/v7, and ppc64le with Go 1.27.2. `file` confirms all four are static ELF executables. Third-party glibc is removed; builds no longer copy binaries to the user's global GOPATH.
 - Docker builds now share the static build script, explicit target OS/architecture, version metadata, and ARM variant normalization. Buildx creation is a recipe prerequisite, not a Makefile parse-time side effect. Default buildx output is cache; registry publication requires `IMG_RESULT=push`.
 - Bash syntax checks, Make dry runs for local/multi-architecture builds, and whitespace validation pass. Image builds, amd64/arm64 container smoke tests, image vulnerability scanning, NFS mount/reconnect behavior, and restart downtime measurements remain pending because Docker is not running locally.
+
+## Phase 4: deployment and security
+
+- Removed PSP resources and their RBAC. Deprecated PSP and unprivileged-server values now fail with migration guidance; controller security settings are independent.
+- Helm and raw manifests use explicit API groups/resources/verbs without secrets, node proxy, pod exec, CRDs, or wildcard privileges. Kernel server pods remain privileged and newly generated pods disable API token automounting.
+- Added values schema validation and optional controller/server image digests. Default controller security runs without root, drops capabilities, disables escalation, uses RuntimeDefault seccomp, and makes its root filesystem read-only.
+- Fixed a discovered chart regression: GC=false previously omitted the environment variable, restoring the controller's true default. False is now passed explicitly; baseline fixtures patch the 0.11.0 Deployment to exercise the intended disabled case. File-permission UID/GID zero values also render explicitly.
+- Helm lint, default/custom-value rendering, schema rejection cases, digest precedence, reduced RBAC checks, and controller/server security regression tests pass. Existing server creation tests also pass.
+- Server-side validation, actual admission behavior, and provisioning under reduced RBAC remain Linux cluster release gates.

@@ -1,0 +1,302 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "rbac",
+    "nfsProvisioner",
+    "nfsStorageClass"
+  ],
+  "properties": {
+    "rbac": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "pspEnabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "imagePullSecrets": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "nfsProvisioner": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "privileged": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "required": [
+            "repository",
+            "pullPolicy"
+          ],
+          "properties": {
+            "registry": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^$|/$"
+            },
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tag": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pullPolicy": {
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^$|^sha256:[a-f0-9]{64}$"
+            }
+          }
+        },
+        "nfsServerAlpineImage": {
+          "type": "object",
+          "required": [
+            "repository"
+          ],
+          "properties": {
+            "registry": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^$|/$"
+            },
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tag": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pullPolicy": {
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^$|^sha256:[a-f0-9]{64}$"
+            }
+          }
+        },
+        "enableLeaderElection": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "enum": [
+            true,
+            false,
+            "true",
+            "false"
+          ]
+        },
+        "enableGarbageCollection": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "enum": [
+            true,
+            false,
+            "true",
+            "false"
+          ]
+        },
+        "securityContext": {
+          "type": "object"
+        },
+        "nfsServerNamespace": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        },
+        "nfsBackendPvcTimeout": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^$|^([0-9]+(\\.[0-9]+)?(ns|us|ms|s|m|h))+$"
+        },
+        "healthCheck": {
+          "type": "object",
+          "properties": {
+            "initialDelaySeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "nfsStorageClass": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reclaimPolicy": {
+          "enum": [
+            "Delete",
+            "Retain"
+          ]
+        },
+        "nfsServerType": {
+          "enum": [
+            "kernel"
+          ]
+        },
+        "mountOptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "leaseTime": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "graceTime": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "filePermissions": {
+          "type": "object",
+          "properties": {
+            "UID": {
+              "type": [
+                "string",
+                "integer"
+              ],
+              "pattern": "^[0-9]+$",
+              "minimum": 0
+            },
+            "GID": {
+              "type": [
+                "string",
+                "integer"
+              ],
+              "pattern": "^[0-9]+$",
+              "minimum": 0
+            },
+            "mode": {
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "nfsServer": {
+      "type": "object",
+      "properties": {
+        "useClusterIP": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "enum": [
+            true,
+            false,
+            "true",
+            "false"
+          ]
+        },
+        "imagePullSecret": {
+          "type": "string"
+        }
+      }
+    },
+    "analytics": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "enum": [
+            true,
+            false,
+            "true",
+            "false"
+          ]
+        }
+      }
+    }
+  }
+}

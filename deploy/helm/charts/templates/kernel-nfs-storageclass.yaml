@@ -41,13 +41,13 @@ metadata:
 {{- if .Values.nfsStorageClass.filePermissions }}
       - name: FilePermissions
         data:
-{{- if .Values.nfsStorageClass.filePermissions.UID }}
+{{- if hasKey .Values.nfsStorageClass.filePermissions "UID" }}
           UID: {{ .Values.nfsStorageClass.filePermissions.UID | quote }}
 {{- end }}
-{{- if .Values.nfsStorageClass.filePermissions.GID }}
+{{- if hasKey .Values.nfsStorageClass.filePermissions "GID" }}
           GID: {{ .Values.nfsStorageClass.filePermissions.GID | quote }}
 {{- end }}
-{{- if .Values.nfsStorageClass.filePermissions.mode }}
+{{- if hasKey .Values.nfsStorageClass.filePermissions "mode" }}
           mode: {{ .Values.nfsStorageClass.filePermissions.mode | quote }}
 {{- end }}
 {{- end }}

@@ -20,35 +20,28 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: openebs-maya-operator
 rules:
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["get", "list", "watch", "create", "update", "patch"]
-- apiGroups: ["*"]
-  resources: ["nodes", "nodes/proxy"]
-  verbs: ["*"]
-- apiGroups: ["*"]
-  resources: ["namespaces", "services", "pods", "pods/exec", "deployments", "deployments/finalizers", "replicationcontrollers", "replicasets", "events", "endpoints", "configmaps", "secrets", "jobs", "cronjobs"]
-  verbs: ["*"]
-- apiGroups: ["*"]
-  resources: ["statefulsets", "daemonsets"]
-  verbs: ["*"]
-- apiGroups: ["*"]
-  resources: ["resourcequotas", "limitranges"]
-  verbs: ["list", "watch"]
-- apiGroups: ["*"]
-  resources: ["ingresses", "horizontalpodautoscalers", "verticalpodautoscalers", "poddisruptionbudgets", "certificatesigningrequests"]
-  verbs: ["list", "watch"]
-- apiGroups: ["*"]
-  resources: ["storageclasses", "persistentvolumeclaims", "persistentvolumes"]
-  verbs: ["*"]
-- apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
-  verbs: [ "get", "list", "create", "update", "delete", "patch"]
-- apiGroups: ["openebs.io"]
-  resources: [ "*"]
-  verbs: ["*"]
-- nonResourceURLs: ["/metrics"]
-  verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes", "persistentvolumeclaims", "services"]
+    verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
 ---
 # Bind the Service Account with the Role Privileges.
 # TODO: Check if default account also needs to be there
@@ -90,10 +83,21 @@ spec:
         openebs.io/version: dev
     spec:
       serviceAccountName: openebs-maya-operator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: openebs-provisioner-nfs
         imagePullPolicy: IfNotPresent
-        image: openebs/provisioner-nfs:ci
+        image: openebs/provisioner-nfs:0.11.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         env:
         #   OPENEBS_IO_K8S_MASTER enables openebs provisioner to connect to K8s
         #   based on this address. This is ignored if empty.
@@ -148,7 +152,7 @@ spec:
         # OPENEBS_IO_NFS_SERVER_IMG defines the nfs-server-alpine image name to be used
         # while creating nfs volume
         - name: OPENEBS_IO_NFS_SERVER_IMG
-          value: openebs/nfs-server-alpine:ci
+          value: openebs/nfs-server-alpine:0.11.0
         # LEADER_ELECTION_ENABLED is used to enable/disable leader election. By default
         # leader election is enabled.
         #- name: LEADER_ELECTION_ENABLED

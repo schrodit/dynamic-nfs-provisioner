@@ -276,7 +276,7 @@ func (p *Provisioner) createDeployment(nfsServerOpts *KernelNFSServerOptions) er
 		resourceRequirements = *nfsServerOpts.resources
 	}
 
-	//TODO
+	// Kernel NFS requires privileges; the controller itself does not.
 	secContext := true
 
 	// Create Deployment for NFS Server and mount the exports PVC.
@@ -367,6 +367,10 @@ func (p *Provisioner) createDeployment(nfsServerOpts *KernelNFSServerOptions) er
 		//TODO : Need to relook at this error
 		return errors.Wrapf(err, "unable to build Deployment")
 	}
+
+	// NFS servers do not call the Kubernetes API and must not inherit an API token.
+	automountToken := false
+	deployObj.Spec.Template.Spec.AutomountServiceAccountToken = &automountToken
 
 	if p.hook != nil && p.hook.ActionExists(nfshook.ResourceNFSServerDeployment, nfshook.EventTypeCreateVolume) {
 		err = p.hook.Action(deployObj, nfshook.ResourceNFSServerDeployment, nfshook.EventTypeCreateVolume)

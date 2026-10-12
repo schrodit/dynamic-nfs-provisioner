@@ -1,9 +1,12 @@
-Thank you for installing {{ .Chart.Name }} 😀
+Release {{ .Release.Name }} is installed in namespace {{ .Release.Namespace }}.
 
-Your release is named {{ .Release.Name }} and it's installed to namespace: {{ .Release.Namespace }}.
+Check the controller:
+  kubectl get pods -n {{ .Release.Namespace }}
 
-The OpenEBS NFSPV Provisioner has been installed check its status by running:
-$ kubectl get pods -n {{ .Release.Namespace }}
+Kernel NFS server pods require privileged admission in {{ default .Release.Namespace .Values.nfsProvisioner.nfsServerNamespace }}.
+When using Pod Security Admission, configure that namespace with the privileged
+policy, or a suitable administrator-managed exemption. The controller itself runs
+without root and with dropped capabilities. See docs/security.md before installation.
 
-For more information, visit our Slack at https://openebs.io/community or view
-the documentation online at https://github.com/openebs/dynamic-nfs-provisioner/.
+Updating the chart changes the image for newly provisioned servers. Existing NFS
+server images are upgraded separately and restart their pods, interrupting I/O.

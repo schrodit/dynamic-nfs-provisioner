@@ -75,3 +75,23 @@ Common labels
 {{ include "nfsProvisioner.selectorLabels" . }}
 {{ include "nfsProvisioner.componentLabels" . }}
 {{- end -}}
+
+{{/* Reject legacy settings that cannot be honored by kernel NFS. */}}
+{{- define "nfsProvisioner.validate" -}}
+{{- if .Values.rbac.pspEnabled -}}
+{{- fail "rbac.pspEnabled=true is unsupported: PodSecurityPolicy was removed in Kubernetes 1.25. Configure Pod Security Admission for the NFS server namespace instead." -}}
+{{- end -}}
+{{- if not .Values.nfsProvisioner.privileged -}}
+{{- fail "nfsProvisioner.privileged=false is unsupported: kernel NFS servers require privileged containers. Controller privileges are configured with nfsProvisioner.securityContext." -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Build an image reference, preferring an immutable digest over a tag. */}}
+{{- define "nfsProvisioner.image" -}}
+{{- $image := .image -}}
+{{- if $image.digest -}}
+{{- printf "%s%s@%s" (default "" $image.registry) $image.repository $image.digest -}}
+{{- else -}}
+{{- printf "%s%s:%s" (default "" $image.registry) $image.repository (default .appVersion $image.tag) -}}
+{{- end -}}
+{{- end -}}
