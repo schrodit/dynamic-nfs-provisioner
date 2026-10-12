@@ -21,3 +21,11 @@ This records evidence for the six phases in update-plan.md. Local execution uses
 - Unit tests, integration-suite compilation without cluster execution, vet, module verification, and targeted race tests pass. New behavioral tests cover node selectors, annotation precedence, and concurrent request tracking. The binary reports its version without requiring Maya or Git at runtime.
 - `govulncheck` against production packages reports no vulnerabilities after patching x/net. This is a Go reachability scan; image scanning remains pending.
 - Kubernetes 1.35–1.37 runtime compatibility, Lease failover, data retention, and rollback remain cluster release gates.
+
+## Phase 3: production images and builds
+
+- Verified Docker Hub manifest digests for Alpine 3.24.2 and Go 1.27.2/alpine3.24. Both indexes include amd64, arm64, arm/v7, and ppc64le. Production Dockerfiles pin those digests.
+- Verified the Alpine 3.24 package index contains Bash, certificates, procps-ng, NFS utilities, rpcbind, iproute2, coreutils, and Git. Kernel NFS runtime behavior still requires Linux execution.
+- Cross-built the actual provisioner binary for Linux amd64, arm64, arm/v7, and ppc64le with Go 1.27.2. `file` confirms all four are static ELF executables. Third-party glibc is removed; builds no longer copy binaries to the user's global GOPATH.
+- Docker builds now share the static build script, explicit target OS/architecture, version metadata, and ARM variant normalization. Buildx creation is a recipe prerequisite, not a Makefile parse-time side effect. Default buildx output is cache; registry publication requires `IMG_RESULT=push`.
+- Bash syntax checks, Make dry runs for local/multi-architecture builds, and whitespace validation pass. Image builds, amd64/arm64 container smoke tests, image vulnerability scanning, NFS mount/reconnect behavior, and restart downtime measurements remain pending because Docker is not running locally.

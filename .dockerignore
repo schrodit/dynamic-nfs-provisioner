@@ -1,0 +1,6 @@
+.git
+bin
+coverage.txt
+profile.out
+artifacts
+**/__pycache__

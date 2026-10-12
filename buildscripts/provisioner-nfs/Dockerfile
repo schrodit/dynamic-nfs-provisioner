@@ -1,54 +1,16 @@
-#Copyright 2020 The OpenEBS Authors
-#
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
-#
-FROM alpine:3.12
-
-RUN apk add --no-cache \
-    iproute2 \
-    bash \
-    curl \
-    net-tools \
-    mii-tool \
-    procps \
-#    libc6-compat \
-    ca-certificates
-
-
-# Download and install glibc
-ENV GLIBC_REPO=https://github.com/sgerrand/alpine-pkg-glibc
-ENV GLIBC_VERSION=2.30-r0
-
-RUN set -ex && \
-    apk --update add libstdc++ curl ca-certificates && \
-    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION}; \
-        do curl -sSL ${GLIBC_REPO}/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \
-    apk add --allow-untrusted /tmp/*.apk && \
-    rm -v /tmp/*.apk && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib
-
-
-COPY provisioner-nfs /
-
-ARG ARCH
+# Copyright 2026 The OpenEBS Authors.
+# Licensed under the Apache License, Version 2.0.
+# Compatibility path for an already-built static Linux binary.
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+RUN apk add --no-cache ca-certificates procps-ng
 ARG DBUILD_DATE
-ARG DBUILD_REPO_URL
-ARG DBUILD_SITE_URL
-LABEL org.label-schema.name="provisioner-nfs"
-LABEL org.label-schema.description="Dynamic NFS PV Provisioner for OpenEBS"
-LABEL org.label-schema.schema-version="1.0"
-LABEL org.label-schema.build-date=$DBUILD_DATE
-LABEL org.label-schema.vcs-url=$DBUILD_REPO_URL
-LABEL org.label-schema.url=$DBUILD_SITE_URL
-
-ENTRYPOINT ["/provisioner-nfs"]
+ARG DBUILD_REPO_URL=https://github.com/schrodit/dynamic-nfs-provisioner
+ARG RELEASE_TAG=ci
+ARG GIT_COMMIT=unknown
+LABEL org.opencontainers.image.title="provisioner-nfs" \
+      org.opencontainers.image.created=$DBUILD_DATE \
+      org.opencontainers.image.source=$DBUILD_REPO_URL \
+      org.opencontainers.image.version=$RELEASE_TAG \
+      org.opencontainers.image.revision=$GIT_COMMIT
+COPY provisioner-nfs /usr/local/bin/provisioner-nfs
+ENTRYPOINT ["/usr/local/bin/provisioner-nfs"]

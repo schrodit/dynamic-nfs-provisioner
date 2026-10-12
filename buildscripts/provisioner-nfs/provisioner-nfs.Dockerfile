@@ -1,57 +1,34 @@
-# Copyright 2020 The OpenEBS Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-FROM golang:1.27.2 as build
-
+# Copyright 2026 The OpenEBS Authors.
+# Licensed under the Apache License, Version 2.0.
+FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
 ARG TARGETOS
 ARG TARGETARCH
-ARG TARGETVARIANT=""
-ARG RELEASE_TAG
-
-ENV GO111MODULE=on \
-  CGO_ENABLED=0 \
-  GOOS=${TARGETOS} \
-  GOARCH=${TARGETARCH} \
-  GOARM=${TARGETVARIANT} \
-  DEBIAN_FRONTEND=noninteractive \
-  PATH="/root/go/bin:${PATH}" \
-  RELEASE_TAG=${RELEASE_TAG}
-
-WORKDIR /go/src/github.com/openebs/dynamic-nfs-provisioner/
-
-RUN apt-get update && apt-get install -y make git
-
+ARG TARGETVARIANT
+ARG RELEASE_TAG=ci
+ARG GIT_COMMIT=unknown
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local
+WORKDIR /src
+RUN apk add --no-cache bash git
 COPY go.mod go.sum ./
-# Get dependancies - will also be cached if we won't change mod/sum
 RUN go mod download
-
 COPY . .
+RUN XC_OS="$TARGETOS" XC_ARCH="$TARGETARCH" GOARM="${TARGETVARIANT#v}" \
+    RELEASE_TAG="$RELEASE_TAG" GIT_COMMIT="$GIT_COMMIT" \
+    PNAME=provisioner-nfs CTLNAME=provisioner-nfs bash buildscripts/build.sh
 
-RUN make provisioner-nfs
-
-FROM alpine:3.12.0
-
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+RUN apk add --no-cache ca-certificates procps-ng
 ARG DBUILD_DATE
-ARG DBUILD_REPO_URL
-ARG DBUILD_SITE_URL
-LABEL org.label-schema.name="provisioner-nfs"
-LABEL org.label-schema.description="Dynamic NFS PV Provisioner for OpenEBS"
-LABEL org.label-schema.schema-version="1.0"
-LABEL org.label-schema.build-date=$DBUILD_DATE
-LABEL org.label-schema.vcs-url=$DBUILD_REPO_URL
-LABEL org.label-schema.url=$DBUILD_SITE_URL
-
-COPY --from=build /go/src/github.com/openebs/dynamic-nfs-provisioner/bin/provisioner-nfs/provisioner-nfs /usr/local/bin/provisioner-nfs
-
+ARG DBUILD_REPO_URL=https://github.com/schrodit/dynamic-nfs-provisioner
+ARG DBUILD_SITE_URL=https://github.com/schrodit/dynamic-nfs-provisioner
+ARG RELEASE_TAG=ci
+ARG GIT_COMMIT=unknown
+LABEL org.opencontainers.image.title="provisioner-nfs" \
+      org.opencontainers.image.description="Dynamic NFS PV provisioner" \
+      org.opencontainers.image.created=$DBUILD_DATE \
+      org.opencontainers.image.source=$DBUILD_REPO_URL \
+      org.opencontainers.image.url=$DBUILD_SITE_URL \
+      org.opencontainers.image.version=$RELEASE_TAG \
+      org.opencontainers.image.revision=$GIT_COMMIT
+COPY --from=build /src/bin/provisioner-nfs/provisioner-nfs /usr/local/bin/provisioner-nfs
 ENTRYPOINT ["/usr/local/bin/provisioner-nfs"]

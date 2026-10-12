@@ -17,11 +17,12 @@ ifeq (${PLATFORMS}, )
 	export PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le"
 endif
 
-# if IMG_RESULT is unspecified, by default the image will be pushed to registry
+# Cache by default; pushing requires IMG_RESULT=push.
+IMG_RESULT ?= cache
 ifeq (${IMG_RESULT}, load)
 	export PUSH_ARG="--load"
 	# if load is specified, image will be built only for the build machine architecture.
-	export PLATFORMS="local"
+	export PLATFORMS="linux/$(shell go env GOARCH)"
 else ifeq (${IMG_RESULT}, cache)
 	# if cache is specified, image will only be available in the build cache, it won't be pushed or loaded
 	# therefore no PUSH_ARG will be specified
@@ -29,16 +30,13 @@ else
 	export PUSH_ARG="--push"
 endif
 
-# enabling experimental Docker CLI features
-export DOCKER_CLI_EXPERIMENTAL=enabled
-
-ifeq ($(shell docker buildx ls | grep -q container-builder)), 1)
-	docker buildx create --platform ${PLATFORMS} --name container-builder --use
-endif
+.PHONY: buildx-builder
+buildx-builder:
+	@docker buildx inspect container-builder >/dev/null 2>&1 || docker buildx create --name container-builder --driver docker-container
 
 .PHONY: docker.buildx.provisioner-nfs
-docker.buildx.provisioner-nfs:
-	@docker buildx build --platform ${PLATFORMS} \
+docker.buildx.provisioner-nfs: buildx-builder
+	@docker buildx build --builder container-builder --platform ${PLATFORMS} \
 		-t "$(PROVISIONER_NFS_IMAGE_TAG)" ${DBUILD_ARGS} -f $(PWD)/buildscripts/$(PROVISIONER_NFS)/$(PROVISIONER_NFS).Dockerfile \
 		. ${PUSH_ARG}
 	@echo "--> Build docker image: $(PROVISIONER_NFS_IMAGE_TAG)"
@@ -49,12 +47,12 @@ buildx.push.provisioner-nfs:
 	BUILDX=true DIMAGE=${IMAGE_ORG}/provisioner-nfs ./buildscripts/push.sh
 
 .PHONY: docker.buildx.nfs-server
-docker.buildx.nfs-server:
+docker.buildx.nfs-server: buildx-builder
 	@cd nfs-server-container && \
-		docker buildx build --platform ${PLATFORMS} -t "$(NFS_SERVER_IMAGE_TAG)" . ${PUSH_ARG}
+		docker buildx build --builder container-builder --platform ${PLATFORMS} -t "$(NFS_SERVER_IMAGE_TAG)" ${DBUILD_ARGS} . ${PUSH_ARG}
 	@echo "--> Build docker image: $(NFS_SERVER_IMAGE_TAG)"
 	@echo
 
 .PHONY: buildx.push.nfs-server
 buildx.push.nfs-server:
-	BUILDX=true DIMAGE=${IMAGE_ORG}/nf-server-alpine ./buildscripts/push.sh
+	BUILDX=true DIMAGE=${IMAGE_ORG}/nfs-server-alpine ./buildscripts/push.sh

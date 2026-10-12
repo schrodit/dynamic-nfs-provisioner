@@ -225,9 +225,9 @@ while true; do
     # Normally only required if v3 will be used
     # But currently enabled to overcome an NFS bug around opening an IPv6 socket
     echo "Starting rpcbind..."
-    /sbin/rpcbind -w
+    rpcbind -w
     echo "Displaying rpcbind status..."
-    /sbin/rpcinfo
+    rpcinfo
 
     # Only required if v3 will be used
     # /usr/sbin/rpc.idmapd
@@ -236,7 +236,7 @@ while true; do
 
     echo "Starting NFS in the background..."
     get_nfs_args nfs_args
-    /usr/sbin/rpc.nfsd ${nfs_args[@]}
+    /usr/sbin/rpc.nfsd "${nfs_args[@]}"
     echo "Exporting File System..."
     if /usr/sbin/exportfs -rv; then
       /usr/sbin/exportfs
@@ -244,7 +244,7 @@ while true; do
       echo "Export validation failed, exiting..."
       exit 1
     fi
-    echo "Starting Mountd in the background..."These
+    echo "Starting Mountd in the background..."
     /usr/sbin/rpc.mountd --debug all --no-udp --no-nfs-version 2 --no-nfs-version 3
 # --exports-file /etc/exports
 

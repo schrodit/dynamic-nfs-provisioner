@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+.DEFAULT_GOAL := all
+
 GO111MODULE ?= on
 export GO111MODULE
 
@@ -98,7 +100,7 @@ ifeq (${DBUILD_SITE_URL}, )
   export DBUILD_SITE_URL
 endif
 
-export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL} --build-arg RELEASE_TAG=${TAG}
+export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL} --build-arg RELEASE_TAG=${TAG} --build-arg GIT_COMMIT=$(shell git rev-parse HEAD)
 
 # include the buildx recipes
 include Makefile.buildx.mk
@@ -164,20 +166,15 @@ provisioner-nfs:
 	@PNAME=${PROVISIONER_NFS} CTLNAME=${PROVISIONER_NFS} NFSSERVERIMG=${NFS_SERVER_IMAGE_TAG} sh -c "'$(PWD)/buildscripts/build.sh'"
 
 .PHONY: provisioner-nfs-image
-provisioner-nfs-image: provisioner-nfs
-	@echo "-------------------------------"
-	@echo "--> provisioner-nfs image "
-	@echo "-------------------------------"
-	@cp bin/provisioner-nfs/${PROVISIONER_NFS} buildscripts/provisioner-nfs/
-	@cd buildscripts/provisioner-nfs && docker build -t ${PROVISIONER_NFS_IMAGE_TAG} ${DBUILD_ARGS} . --no-cache
-	@rm buildscripts/provisioner-nfs/${PROVISIONER_NFS}
+provisioner-nfs-image:
+	@docker build -f buildscripts/provisioner-nfs/provisioner-nfs.Dockerfile -t ${PROVISIONER_NFS_IMAGE_TAG} ${DBUILD_ARGS} .
 
 .PHONY: nfs-server-image
 nfs-server-image:
 	@echo "----------------------------"
 	@echo "--> nfs-server image    "
 	@echo "----------------------------"
-	@cd nfs-server-container && docker build -t ${NFS_SERVER_IMAGE_TAG} . --no-cache
+	@cd nfs-server-container && docker build -t ${NFS_SERVER_IMAGE_TAG} ${DBUILD_ARGS} .
 
 .PHONY: license-check
 license-check:

@@ -9,13 +9,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.14
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 #LABEL maintainer "Steven Iveson <steve@iveson.eu>"
 #LABEL source "https://github.com/sjiveson/nfs-server-alpine"
 #LABEL branch "master"
-COPY Dockerfile README.md /
+ARG RELEASE_TAG=ci
+ARG GIT_COMMIT=unknown
+LABEL org.opencontainers.image.title="nfs-server-alpine" \
+      org.opencontainers.image.version=$RELEASE_TAG \
+      org.opencontainers.image.revision=$GIT_COMMIT \
+      org.opencontainers.image.source="https://github.com/schrodit/dynamic-nfs-provisioner"
 
-RUN apk add --no-cache --update --verbose nfs-utils bash iproute2 coreutils && \
+RUN apk add --no-cache --update --verbose nfs-utils rpcbind bash iproute2 coreutils && \
     rm -rf /var/cache/apk /tmp /sbin/halt /sbin/poweroff /sbin/reboot && \
     mkdir -p /var/lib/nfs/rpc_pipefs /var/lib/nfs/v4recovery && \
     echo "rpc_pipefs    /var/lib/nfs/rpc_pipefs rpc_pipefs      defaults        0       0" >> /etc/fstab && \
