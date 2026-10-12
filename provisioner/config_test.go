@@ -19,11 +19,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
-	mconfig "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
+	mconfig "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGetResourceList(t *testing.T) {

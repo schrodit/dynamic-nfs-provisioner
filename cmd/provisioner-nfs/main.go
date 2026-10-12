@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	logger "github.com/openebs/maya/pkg/logs"
+	"k8s.io/klog/v2"
 
 	"github.com/openebs/dynamic-nfs-provisioner/cmd/provisioner-nfs/app"
 )
@@ -34,8 +34,8 @@ func main() {
 // run starts the dynamic provisioner for NFS PVs
 func run() error {
 	// Init logging
-	logger.InitLogs()
-	defer logger.FlushLogs()
+	klog.InitFlags(nil)
+	defer klog.Flush()
 
 	// Create & execute new command
 	cmd, err := app.StartProvisioner()

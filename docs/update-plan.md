@@ -10,8 +10,8 @@ Bring the provisioner onto supported dependencies, images, and Kubernetes versio
 | --- | --- | --- |
 | Go | Module 1.19; builder/CI 1.19.13 | Go 1.27.2, used consistently in local tooling, CI, and Docker builds |
 | Kubernetes clusters | CI tests only 1.27.3 | Latest patch releases of 1.35, 1.36, and 1.37 |
-| Kubernetes Go modules | Replacement rules force 0.20.2; Kubernetes internals at 1.17.3 | One consistent supported module family; start with 0.35.x and validate against the controller library and cluster matrix |
-| External provisioner library | v7.0.1 | A maintained major compatible with the selected Kubernetes modules; pin the exact version after compatibility review |
+| Kubernetes Go modules | Replacement rules force 0.20.2; Kubernetes internals at 1.17.3 | Aligned 0.37.1 modules, required by external-provisioner 13.1.0; older cluster compatibility remains a runtime test gate |
+| External provisioner library | v7.0.1 | v13.1.0, with Lease leader election and legacy finalizer behavior retained |
 | Production image bases | Alpine 3.12 and 3.14 | Alpine 3.24.x, with pinned image digests |
 | Integration tests | Ginkgo v1 and an older Ansible/Python stack | Ginkgo v2 and an updated Go integration suite |
 

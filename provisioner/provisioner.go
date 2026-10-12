@@ -38,21 +38,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openebs/maya/pkg/alertlog"
-
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
-	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v7/controller"
+	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v13/controller"
 
+	mconfig "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
+	menv "github.com/openebs/dynamic-nfs-provisioner/pkg/env"
 	"github.com/openebs/dynamic-nfs-provisioner/pkg/metrics"
 	analytics "github.com/openebs/google-analytics-4/usage"
-	mconfig "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
-	menv "github.com/openebs/maya/pkg/env/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	kubeinformers "k8s.io/client-go/informers"
 	listersv1 "k8s.io/client-go/listers/core/v1"
-	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
 	clientset "k8s.io/client-go/kubernetes"
@@ -202,7 +201,7 @@ func (p *Provisioner) Provision(ctx context.Context, opts pvController.Provision
 		return pv, pvController.ProvisioningFinished, nil
 	}
 
-	alertlog.Logger.Errorw("",
+	klog.ErrorS(nil, "",
 		"eventcode", "nfs.pv.provision.failure",
 		"msg", "Failed to provision NFS PV",
 		"rname", opts.PVName,
@@ -256,7 +255,7 @@ func (p *Provisioner) Delete(ctx context.Context, pv *v1.PersistentVolume) (err 
 			return nil
 		}
 
-		alertlog.Logger.Errorw("",
+		klog.ErrorS(nil, "",
 			"eventcode", "nfs.pv.delete.failure",
 			"msg", "Failed to delete NFS PV",
 			"rname", pv.Name,
@@ -267,7 +266,7 @@ func (p *Provisioner) Delete(ctx context.Context, pv *v1.PersistentVolume) (err 
 		return err
 	}
 	klog.Infof("Retained volume %v", pv.Name)
-	alertlog.Logger.Infow("",
+	klog.InfoS("",
 		"eventcode", "nfs.pv.delete.success",
 		"msg", "Successfully deleted NFS PV",
 		"rname", pv.Name,
@@ -275,14 +274,46 @@ func (p *Provisioner) Delete(ctx context.Context, pv *v1.PersistentVolume) (err 
 	return nil
 }
 
-// validateNodeAffinityRules will returns error if there are no
-// node exist for given affinity rules
+// nodeSelectorRequirementsAsSelector converts node label expressions using public APIs.
+func nodeSelectorRequirementsAsSelector(requirements []v1.NodeSelectorRequirement) (labels.Selector, error) {
+	if len(requirements) == 0 {
+		return labels.Nothing(), nil
+	}
+	selector := labels.NewSelector()
+	for _, requirement := range requirements {
+		var operator selection.Operator
+		switch requirement.Operator {
+		case v1.NodeSelectorOpIn:
+			operator = selection.In
+		case v1.NodeSelectorOpNotIn:
+			operator = selection.NotIn
+		case v1.NodeSelectorOpExists:
+			operator = selection.Exists
+		case v1.NodeSelectorOpDoesNotExist:
+			operator = selection.DoesNotExist
+		case v1.NodeSelectorOpGt:
+			operator = selection.GreaterThan
+		case v1.NodeSelectorOpLt:
+			operator = selection.LessThan
+		default:
+			return nil, fmt.Errorf("unsupported node selector operator %q", requirement.Operator)
+		}
+		item, err := labels.NewRequirement(requirement.Key, operator, requirement.Values)
+		if err != nil {
+			return nil, err
+		}
+		selector = selector.Add(*item)
+	}
+	return selector, nil
+}
+
+// validateNodeAffinityRules rejects rules that match no nodes.
 func (p *Provisioner) validateNodeAffinityRules() error {
 	if len(p.nodeAffinity.MatchExpressions) == 0 {
 		return nil
 	}
 
-	nodeSelector, err := v1helper.NodeSelectorRequirementsAsSelector(p.nodeAffinity.MatchExpressions)
+	nodeSelector, err := nodeSelectorRequirementsAsSelector(p.nodeAffinity.MatchExpressions)
 	if err != nil {
 		return err
 	}
@@ -311,8 +342,7 @@ func sendEventOrIgnore(pvcName, pvName, capacity, stgType, method string) {
 	analytics.New().CommonBuild(GetEngineName(stgType, method)).ApplicationBuilder().
 		SetVolumeName(pvName).
 		SetVolumeClaimName(pvcName).
-		SetLabel(analytics.EventLabelCapacity).
-		SetAction(DefaultUnknownReplicaCount).
+		SetReplicaCount(DefaultUnknownReplicaCount).
 		SetCategory(method).
 		SetVolumeCapacity(capacity).Send()
 }

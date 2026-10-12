@@ -10,6 +10,9 @@ metadata:
   labels:
   {{- include "nfsProvisioner.labels" . | nindent 4 }}
 rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: ["*"]
     resources: ["nodes", "nodes/proxy"]
     verbs: ["*"]

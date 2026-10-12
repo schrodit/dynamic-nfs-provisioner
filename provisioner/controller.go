@@ -24,11 +24,11 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 
+	menv "github.com/openebs/dynamic-nfs-provisioner/pkg/env"
 	mKube "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/client"
+	"github.com/openebs/dynamic-nfs-provisioner/pkg/version"
 	analytics "github.com/openebs/google-analytics-4/usage"
-	menv "github.com/openebs/maya/pkg/env/v1alpha1"
-	"github.com/openebs/maya/pkg/version"
-	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v7/controller"
+	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v13/controller"
 )
 
 var (
@@ -69,10 +69,13 @@ func Start(ctx context.Context) error {
 	// that has the reconciliation loops for PVC create and delete
 	// events and invokes the Provisioner Handler.
 	pc := pvController.NewProvisionController(
+		ctx,
 		kubeClient,
 		provisionerName,
 		provisioner,
 		pvController.LeaderElection(isLeaderElectionEnabled()),
+		pvController.LeaderElectionNamespace(getOpenEBSNamespace()),
+		pvController.AddFinalizer(false),
 	)
 	klog.V(4).Info("Provisioner started")
 
@@ -82,7 +85,7 @@ func Start(ctx context.Context) error {
 	if menv.Truthy(menv.OpenEBSEnableAnalytics) {
 		analytics.RegisterVersionGetter(version.GetVersionDetails)
 		analytics.New().CommonBuild(DefaultCASType).InstallBuilder(true).Send()
-		go analytics.PingCheck(DefaultCASType, Ping)
+		go analytics.PingCheckCtx(ctx, DefaultCASType, Ping, false)
 	}
 
 	<-ctx.Done()

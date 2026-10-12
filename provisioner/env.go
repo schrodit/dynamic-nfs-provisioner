@@ -17,7 +17,7 @@ limitations under the License.
 package provisioner
 
 import (
-	menv "github.com/openebs/maya/pkg/env/v1alpha1"
+	menv "github.com/openebs/dynamic-nfs-provisioner/pkg/env"
 )
 
 //This file defines the environment variable names that are specific

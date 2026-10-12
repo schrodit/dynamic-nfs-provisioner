@@ -19,7 +19,7 @@ package client
 import (
 	"testing"
 
-	env "github.com/openebs/maya/pkg/env/v1alpha1"
+	env "github.com/openebs/dynamic-nfs-provisioner/pkg/env"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"

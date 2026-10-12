@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/openebs/dynamic-nfs-provisioner/pkg/metrics"
+	"github.com/openebs/dynamic-nfs-provisioner/pkg/version"
 	"github.com/openebs/dynamic-nfs-provisioner/provisioner"
-	"github.com/openebs/maya/pkg/util"
 )
 
 var (
@@ -56,8 +56,9 @@ func StartProvisioner() (*cobra.Command, error) {
 		Long: `Manage the NFS PVs that includes: validating, creating,
 			deleting and cleanup tasks. NFS PVs are setup on top
 			of other PVCs (block volumes)`,
-		Run: func(cmd *cobra.Command, args []string) {
-			util.CheckErr(Start(cmd), util.Fatal)
+		Version: version.GetVersionDetails(),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return Start(cmd)
 		},
 	}
 

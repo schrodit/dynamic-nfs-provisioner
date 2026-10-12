@@ -19,7 +19,6 @@ package tests
 import (
 	"time"
 
-	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
@@ -28,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func buildTestHook() *nfshook.Hook {

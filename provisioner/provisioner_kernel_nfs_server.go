@@ -19,15 +19,14 @@ package provisioner
 import (
 	"context"
 
-	"github.com/openebs/maya/pkg/alertlog"
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 
+	mconfig "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
 	mPV "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolume"
-	mconfig "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
 	v1 "k8s.io/api/core/v1"
-	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v7/controller"
+	pvController "sigs.k8s.io/sig-storage-lib-external-provisioner/v13/controller"
 )
 
 // ProvisionKernalNFSServer is invoked by the Provisioner to create a NFS
@@ -45,7 +44,7 @@ func (p *Provisioner) ProvisionKernalNFSServer(ctx context.Context, opts pvContr
 	graceTime, graceErr = volumeConfig.GetNFServerGraceTime()
 	if leaseErr != nil || graceErr != nil {
 		klog.Errorf("Error parsing lease/grace time, leaseError=%s graceError=%s", leaseErr, graceErr)
-		alertlog.Logger.Errorw("",
+		klog.ErrorS(nil, "",
 			"eventcode", "nfs.pv.provision.failure",
 			"msg", "Failed to provision NFS PV",
 			"rname", opts.PVName,
@@ -100,7 +99,7 @@ func (p *Provisioner) ProvisionKernalNFSServer(ctx context.Context, opts pvContr
 	nfsService, err := p.getNFSServerAddress(nfsServerOpts)
 	if err != nil {
 		klog.Infof("Initialize volume %v failed: %v", name, err)
-		alertlog.Logger.Errorw("",
+		klog.ErrorS(nil, "",
 			"eventcode", "nfs.pv.provision.failure",
 			"msg", "Failed to provision NFS PV",
 			"rname", opts.PVName,
@@ -148,7 +147,7 @@ func (p *Provisioner) ProvisionKernalNFSServer(ctx context.Context, opts pvContr
 	pvObj, err := pvObjBuilder.Build()
 
 	if err != nil {
-		alertlog.Logger.Errorw("",
+		klog.ErrorS(nil, "",
 			"eventcode", "nfs.pv.provision.failure",
 			"msg", "Failed to provision NFS PV",
 			"rname", opts.PVName,
@@ -165,7 +164,7 @@ func (p *Provisioner) ProvisionKernalNFSServer(ctx context.Context, opts pvContr
 		}
 	}
 
-	alertlog.Logger.Infow("",
+	klog.InfoS("",
 		"eventcode", "nfs.pv.provision.success",
 		"msg", "Successfully provisioned NFS PV",
 		"rname", opts.PVName,

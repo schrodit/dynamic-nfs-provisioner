@@ -21,8 +21,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/openebs/maya/pkg/debug"
-
 	"github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/client"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -387,10 +385,6 @@ func (k *Kubeclient) GetRaw(name string) ([]byte, error) {
 // kubernetes cluster
 func (k *Kubeclient) Delete(name string, opts *metav1.DeleteOptions) error {
 
-	if debug.EI.IsDeploymentDeleteErrorInjected() {
-		return errors.New("Deployment delete error via injection")
-	}
-
 	if strings.TrimSpace(name) == "" {
 		return errors.New("failed to delete deployment: missing deployment name")
 	}
@@ -405,10 +399,6 @@ func (k *Kubeclient) Delete(name string, opts *metav1.DeleteOptions) error {
 
 // Create creates a deployment in specified namespace in kubernetes cluster
 func (k *Kubeclient) Create(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-
-	if debug.EI.IsDeploymentCreateErrorInjected() {
-		return nil, errors.New("Deployment create error via injection")
-	}
 
 	if deployment == nil {
 		return nil, errors.New("failed to create deployment: nil deployment object")
@@ -429,10 +419,6 @@ func (k *Kubeclient) Create(deployment *appsv1.Deployment) (*appsv1.Deployment, 
 
 // Update updates a deployment in specified namespace in kubernetes cluster
 func (k *Kubeclient) Update(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-
-	if debug.EI.IsDeploymentUpdateErrorInjected() {
-		return nil, errors.New("Deployment update error via injection")
-	}
 
 	if deployment == nil {
 		return nil, errors.New("failed to update deployment: nil deployment object")

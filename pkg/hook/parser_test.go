@@ -19,7 +19,7 @@ package hook
 import (
 	"testing"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/stretchr/testify/assert"
 )
 

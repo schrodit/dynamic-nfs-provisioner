@@ -19,7 +19,7 @@ package hook
 import (
 	"testing"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"

@@ -18,7 +18,6 @@ import (
 	"context"
 	"strings"
 
-	stringer "github.com/openebs/maya/pkg/apis/stringer/v1alpha1"
 	errors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -215,7 +214,7 @@ func (k *Kubeclient) Delete(name string, deleteOpts *metav1.DeleteOptions) error
 func (k *Kubeclient) Create(pv *corev1.PersistentVolume) (*corev1.PersistentVolume, error) {
 	cli, err := k.getClientsetOrCached()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create pv: %s", stringer.Yaml("persistent volume", pv))
+		return nil, errors.Wrapf(err, "failed to create pv: %s", pv)
 	}
 	return k.create(cli, pv, metav1.CreateOptions{})
 }

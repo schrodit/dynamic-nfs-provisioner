@@ -43,10 +43,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up baseline Go
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.19.13
+          go-version-file: .go-version
 
       - name: Unit test
         run: make test
@@ -70,10 +70,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.19
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.13
+          go-version-file: .go-version
 
       - name: Build provisioner-nfs image
         run: make provisioner-nfs-image
@@ -110,10 +110,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.19
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.13
+          go-version-file: .go-version
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2

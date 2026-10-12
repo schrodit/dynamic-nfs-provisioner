@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #Copyright 2020 The OpenEBS Authors
 #
@@ -15,25 +15,14 @@
 #limitations under the License.
 #
 
-# This script was developed by https://github.com/abursavich and posted
-# at https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-521493597
-
+# Align public Kubernetes clients; the Kubernetes monorepo is not a Go dependency.
 set -euo pipefail
-
-VERSION=${1#"v"}
-if [ -z "$VERSION" ]; then
-    echo "Must specify version!"
-    exit 1
+version=${1:-}
+version=${version#v}
+if [[ ! $version =~ ^1\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Usage: bash hack/update-k8s.sh 1.MINOR.PATCH" >&2
+  exit 1
 fi
-MODS=($(
-    curl -sS https://raw.githubusercontent.com/kubernetes/kubernetes/v${VERSION}/go.mod |
-    sed -n 's|.*k8s.io/\(.*\) => ./staging/src/k8s.io/.*|k8s.io/\1|p'
-))
-for MOD in "${MODS[@]}"; do
-    V=$(
-        go mod download -json "${MOD}@kubernetes-${VERSION}" |
-        sed -n 's|.*"Version": "\(.*\)".*|\1|p'
-    )
-    go mod edit "-replace=${MOD}=${MOD}@${V}"
-done
-go get "k8s.io/kubernetes@v${VERSION}"
+module_version="v0.${version#1.}"
+go get "k8s.io/api@${module_version}" "k8s.io/apimachinery@${module_version}" "k8s.io/client-go@${module_version}"
+go mod tidy

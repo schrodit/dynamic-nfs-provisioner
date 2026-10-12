@@ -17,7 +17,7 @@ limitations under the License.
 package hook
 
 import (
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 )
 

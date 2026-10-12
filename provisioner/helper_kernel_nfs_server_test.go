@@ -53,7 +53,7 @@ func getFakePVCObject(pvcNamespace, pvcName, scName, uid string) *corev1.Persist
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteMany,
 			},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceStorage: resource.MustParse("10Gi"),
 				},

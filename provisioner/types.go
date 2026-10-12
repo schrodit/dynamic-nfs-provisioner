@@ -20,8 +20,8 @@ package provisioner
 import (
 	"time"
 
+	mconfig "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
-	mconfig "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	listerv1 "k8s.io/client-go/listers/core/v1"

@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	mayav1alpha1 "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
+	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
 	provisioner "github.com/openebs/dynamic-nfs-provisioner/provisioner"

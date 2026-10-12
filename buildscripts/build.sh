@@ -104,8 +104,8 @@ fi
 
 env GOOS=$GOOS GOARCH=$GOARCH go build ${BUILD_TAG} -ldflags \
     "-X github.com/openebs/dynamic-nfs-provisioner/provisioner.NFSServerDefaultImage=${NFSSERVERIMG}
-     -X github.com/openebs/maya/pkg/version.GitCommit=${GIT_COMMIT}
-     -X github.com/openebs/maya/pkg/version.Version=${VERSION}" \
+     -X github.com/openebs/dynamic-nfs-provisioner/pkg/version.GitCommit=${GIT_COMMIT}
+     -X github.com/openebs/dynamic-nfs-provisioner/pkg/version.Version=${VERSION}" \
     -o $output_name\
     ./cmd/${CTLNAME}
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	mayav1alpha1 "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
+	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	errors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

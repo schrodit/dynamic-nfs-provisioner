@@ -17,10 +17,36 @@ limitations under the License.
 package provisioner
 
 import (
+	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestProvisioningTrackerConcurrent(t *testing.T) {
+	tracker := NewProvisioningTracker()
+	var workers sync.WaitGroup
+	for worker := 0; worker < 20; worker++ {
+		workers.Add(1)
+		go func(id int) {
+			defer workers.Done()
+			name := fmt.Sprintf("pv-%d", id)
+			for request := 0; request < 100; request++ {
+				tracker.Add(name)
+				if !tracker.Inprogress(name) {
+					t.Errorf("active request %s missing", name)
+				}
+				tracker.Inprogress("pv-0") // Garbage collection reads while other requests change.
+				tracker.Delete(name)
+				if tracker.Inprogress(name) {
+					t.Errorf("completed request %s remains", name)
+				}
+			}
+		}(worker)
+	}
+	workers.Wait()
+}
 
 func TestProvisioningTracker(t *testing.T) {
 	tracker := NewProvisioningTracker()

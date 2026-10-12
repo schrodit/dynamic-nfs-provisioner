@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	env "github.com/openebs/maya/pkg/env/v1alpha1"
+	env "github.com/openebs/dynamic-nfs-provisioner/pkg/env"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -210,7 +210,9 @@ func withDefaultGetKubeClientsetFn() OptionFn {
 func withDefaultGetKubeDynamicClientFn() OptionFn {
 	return func(c *Client) {
 		if c.getKubeDynamicClient == nil {
-			c.getKubeDynamicClient = dynamic.NewForConfig
+			c.getKubeDynamicClient = func(config *rest.Config) (dynamic.Interface, error) {
+				return dynamic.NewForConfig(config)
+			}
 		}
 	}
 }

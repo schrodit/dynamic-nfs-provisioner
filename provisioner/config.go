@@ -19,21 +19,18 @@ package provisioner
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 
-	"github.com/ghodss/yaml"
+	mconfig "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
-	mconfig "github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
-	cast "github.com/openebs/maya/pkg/castemplate/v1alpha1"
-	"github.com/openebs/maya/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -119,9 +116,9 @@ func (p *Provisioner) GetVolumeConfig(pvName string, pvc *v1.PersistentVolumeCla
 	pvcCASConfigStr := pvc.ObjectMeta.Annotations[string(mconfig.CASConfigKey)]
 	klog.V(4).Infof("PVC %v has config:%v", pvc.Name, pvcCASConfigStr)
 	if len(strings.TrimSpace(pvcCASConfigStr)) != 0 {
-		pvcCASConfig, err := cast.UnMarshallToConfig(pvcCASConfigStr)
+		pvcCASConfig, err := mconfig.UnMarshallToConfig(pvcCASConfigStr)
 		if err == nil {
-			pvConfig = cast.MergeConfig(pvcCASConfig, pvConfig)
+			pvConfig = mconfig.MergeConfig(pvcCASConfig, pvConfig)
 		} else {
 			return nil, errors.Wrapf(err, "failed to get config: invalid config {%v}"+
 				" in pvc {%v} in namespace {%v}",
@@ -141,11 +138,11 @@ func (p *Provisioner) GetVolumeConfig(pvName string, pvc *v1.PersistentVolumeCla
 	scCASConfigStr := sc.ObjectMeta.Annotations[string(mconfig.CASConfigKey)]
 	klog.V(4).Infof("SC %v has config:%v", *scName, scCASConfigStr)
 	if len(strings.TrimSpace(scCASConfigStr)) != 0 {
-		scCASConfig, err := cast.UnMarshallToConfig(scCASConfigStr)
+		scCASConfig, err := mconfig.UnMarshallToConfig(scCASConfigStr)
 		if err == nil {
 			// SC config will have precedence over PVC config,
 			// if both have the same keys
-			pvConfig = cast.MergeConfig(scCASConfig, pvConfig)
+			pvConfig = mconfig.MergeConfig(scCASConfig, pvConfig)
 		} else {
 			return nil, errors.Wrapf(err, "failed to get config: invalid sc config {%v}", scCASConfigStr)
 		}
@@ -156,13 +153,13 @@ func (p *Provisioner) GetVolumeConfig(pvName string, pvc *v1.PersistentVolumeCla
 	// as to the type of config that can be passed via PVC
 	//pvcCASConfigStr := pvc.ObjectMeta.Annotations[string(mconfig.CASConfigKey)]
 	//if len(strings.TrimSpace(pvcCASConfigStr)) != 0 {
-	//	pvcCASConfig, err := cast.UnMarshallToConfig(pvcCASConfigStr)
+	//	pvcCASConfig, err := mconfig.UnMarshallToConfig(pvcCASConfigStr)
 	//	if err == nil {
-	//		pvConfig = cast.MergeConfig(pvcCASConfig, pvConfig)
+	//		pvConfig = mconfig.MergeConfig(pvcCASConfig, pvConfig)
 	//	}
 	//}
 
-	pvConfigMap, err := cast.ConfigToMap(pvConfig)
+	pvConfigMap, err := mconfig.ConfigToMap(pvConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to read volume config: pvc {%v} in namespace {%v}", pvc.Name, pvc.Namespace)
 	}
@@ -389,7 +386,7 @@ func (c *VolumeConfig) getResourceList(key string) (v1.ResourceList, error) {
 //
 //	`value1` will be returned.
 func (c *VolumeConfig) getValue(key string) string {
-	if configObj, ok := util.GetNestedField(c.options, key).(map[string]string); ok {
+	if configObj, ok := c.options[key].(map[string]string); ok {
 		if val, p := configObj[string(mconfig.ValuePTP)]; p {
 			return val
 		}
@@ -415,7 +412,7 @@ func (c *VolumeConfig) getValue(key string) string {
 //
 //	`dataValue1` will be returned.
 func (c *VolumeConfig) getData(key string, dataKey string) string {
-	if configData, ok := util.GetNestedField(c.configData, key).(map[string]string); ok {
+	if configData, ok := c.configData[key].(map[string]string); ok {
 		if val, p := configData[dataKey]; p {
 			return val
 		}
@@ -472,7 +469,7 @@ func initializeHook(hook **nfshook.Hook) error {
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(HookConfigFilePath)
+	data, err := os.ReadFile(HookConfigFilePath)
 	if err != nil {
 		return errors.Errorf("failed to read hook config file, err=%s", err)
 	}
