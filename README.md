@@ -1,63 +1,26 @@
 # Dynamic NFS Volume Provisioner
-[![Build Status](https://github.com/openebs/dynamic-nfs-provisioner/actions/workflows/build.yml/badge.svg)](https://github.com/openebs/dynamic-nfs-provisioner/actions/workflows/build.yml)
-[![Go Report](https://goreportcard.com/badge/github.com/openebs/dynamic-nfs-provisioner)](https://goreportcard.com/report/github.com/openebs/dynamic-nfs-provisioner)
-[![codecov](https://codecov.io/gh/openebs/dynamic-nfs-provisioner/branch/develop/graph/badge.svg)](https://app.codecov.io/gh/openebs/dynamic-nfs-provisioner)
-[![Slack](https://img.shields.io/badge/chat!!!-slack-ff1493.svg?style=flat-square)](https://kubernetes.slack.com/messages/openebs)
-[![BCH compliance](https://bettercodehub.com/edge/badge/openebs/dynamic-nfs-provisioner?branch=develop)](https://bettercodehub.com/results/openebs/dynamic-nfs-provisioner)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenebs%2Fdynamic-nfs-provisioner.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenebs%2Fdynamic-nfs-provisioner?ref=badge_shield)
 
-<img width="300" align="right" alt="OpenEBS Logo" src="https://raw.githubusercontent.com/cncf/artwork/HEAD/projects/openebs/stacked/color/openebs-stacked-color.png" xmlns="http://www.w3.org/1999/html">
+[![Build](https://github.com/schrodit/dynamic-nfs-provisioner/actions/workflows/build.yml/badge.svg)](https://github.com/schrodit/dynamic-nfs-provisioner/actions/workflows/build.yml)
 
-<p align="justify">
-<strong>OpenEBS Dynamic NFS PV provisioner</strong> can be used to dynamically provision 
-NFS Volumes using different kinds of block storage available on the Kubernetes nodes. 
-<br>
-<br>
-</p>
+This fork updates the OpenEBS Dynamic NFS PV provisioner. It creates a kernel NFS server and a backend PVC for each shared volume, so pods on different Linux nodes can use ReadWriteMany storage. The provisioner identity remains `openebs.io/nfsrwx`.
 
-## Project Status: Beta
-Using NFS Volumes, you can share Volume data across the pods running on different node machines. You can easily create NFS Volumes using OpenEBS Dynamic NFS Provisioner and use it anywhere.
+Version **0.12.0-rc.1 is prepared in source and has not been published**. Candidate chart and manifest defaults point to intended `ghcr.io/schrodit` images. Build and load local images or override both image references before installing. The [validation record](docs/update-validation.md) distinguishes passing local checks from pending runtime gates.
 
-## Installing Dynamic NFS Provisioner
-Please refer to our [Quickstart](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/intro.md) and the [OpenEBS Documentation](https://openebs.io/docs).
+## Compatibility targets
 
-## Kubernetes Compatibility Matrix
-| NFS PROVISIONER VERSION | KUBERNETES VERSIONS | NOTES                                                                                                      |
-|-------------------------|-----------------|------------------------------------------------------------------------------------------------------------|
-| 0.9.0                   | K8s >= 1.14  | [Changelog](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/CHANGELOG.md#090--2022-01-03)  |
-| 0.10.0                  | K8s >= 1.14  | [Changelog](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/CHANGELOG.md#0100--2023-02-09) |
-| 0.11.0                  | K8s >= 1.14  | [Changelog](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/CHANGELOG.md#0110--2023-12-08)  |
+| Candidate | Kubernetes targets | Architecture targets | Qualification |
+| --- | --- | --- | --- |
+| 0.12.0-rc.1 | 1.35.9, 1.36.5, 1.37.1 | Linux amd64 and arm64 | Runtime validation pending |
+| 0.12.0-rc.1 | Same cluster targets | arm/v7 and ppc64le | Static cross-build verified; image builds and runtime unqualified |
 
+Older upstream versions and their historical compatibility claims are recorded in [CHANGELOG.md](CHANGELOG.md). They do not establish this candidate's support range. Native expansion, NFS server high availability, and a CSI conversion are outside this maintenance update.
 
-## Usage
-[Deploying WordPress using Dynamic NFS Provisioner](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/workload/wordpress.md)
+## Install and operate
 
-[Expanding NFS Volumes](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/tutorial/nfs-volume-resize.md)
+Start with the [quickstart](docs/intro.md), [chart values](deploy/helm/charts/README.md), and [security requirements](docs/security.md). Linux nodes need NFS client utilities; server nodes need kernel NFS support and an admission policy permitting privileged server pods.
 
-[Configuring Node Affinity for NFS Volumes](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/tutorial/node-affinity.md)
+Use the [upgrade guide](docs/tutorial/upgrade.md) to update the controller and server images separately. Existing servers keep their images during controller upgrades. Server restarts interrupt client I/O; qualify reconnection and rollback in a disposable cluster before updating application volumes.
 
-[Setting Resource requirements for NFS Server](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/tutorial/configure-nfs-server-resource-requirements.md)
+Other guides cover [WordPress](docs/workload/wordpress.md), [volume resizing](docs/tutorial/nfs-volume-resize.md), [node affinity](docs/tutorial/node-affinity.md), and [hooks](docs/tutorial/nfs-hook.md). See [development](develop/developer.md), [release preparation](RELEASE.md), and the [six-phase update plan](docs/update-plan.md).
 
-[Exposing NFS Volume outside the cluster](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/expose-nfs-server.md)
-
-[Monitoring NFS Provisioner](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/metrics.md)
-
-[Configuring Hook for NFS Provisioner](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/tutorial/nfs-hook.md)
-
-## Troubleshooting
-If you encounter any issue while using OpenEBS Dynamic NFS Provisioner, review the [troubleshooting guide](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/docs/troubleshooting.md). You can also [file an issue](https://github.com/openebs/dynamic-nfs-provisioner/issues) or talk to us on [#openebs channel](https://kubernetes.slack.com/messages/openebs) in the [Kubernetes Slack](https://kubernetes.slack.com).
-
-## Contributing
-OpenEBS welcomes your feedback and contributions in any form possible. To contribute code in OpenEBS Dynamic NFS Provisioner, please follow the instructions mentioned on [Contributing guide](https://github.com/openebs/dynamic-nfs-provisioner/blob/develop/CONTRIBUTING.md). If you need any help, you can chat with us on [#openebs-dev channel](https://kubernetes.slack.com/messages/openebs-dev) in the [Kubernetes Slack](https://kubernetes.slack.com).
-
-## Roadmap
-Find the Dynamic NFS Provisioner roadmap items at the [OpenEBS Roadmap page](https://github.com/orgs/openebs/projects/12).
-
-### Code of conduct
-Participation in the OpenEBS community is governed by the [CNCF Code of Conduct](CODE-OF-CONDUCT.md).
-
-## Inspiration/Credit
-- https://github.com/sjiveson/nfs-server-alpine
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenebs%2Fdynamic-nfs-provisioner.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenebs%2Fdynamic-nfs-provisioner?ref=badge_large)
+This project is licensed under [Apache 2.0](LICENSE). Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). NFS server image inspiration: [sjiveson/nfs-server-alpine](https://github.com/sjiveson/nfs-server-alpine).

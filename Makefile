@@ -90,17 +90,17 @@ DBUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Specify the docker arg for repository url
 ifeq (${DBUILD_REPO_URL}, )
-  DBUILD_REPO_URL="https://github.com/openebs/dynamic-nfs-provisioner"
+  DBUILD_REPO_URL="https://github.com/schrodit/dynamic-nfs-provisioner"
   export DBUILD_REPO_URL
 endif
 
 # Specify the docker arg for website url
 ifeq (${DBUILD_SITE_URL}, )
-  DBUILD_SITE_URL="https://openebs.io"
+  DBUILD_SITE_URL="https://github.com/schrodit/dynamic-nfs-provisioner"
   export DBUILD_SITE_URL
 endif
 
-export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL} --build-arg RELEASE_TAG=${TAG} --build-arg GIT_COMMIT=$(shell git rev-parse HEAD)
+export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL} --build-arg NFSSERVERIMG=${NFS_SERVER_IMAGE_TAG} --build-arg RELEASE_TAG=${TAG} --build-arg GIT_COMMIT=$(shell git rev-parse HEAD)
 
 # include the buildx recipes
 include Makefile.buildx.mk

@@ -26,8 +26,10 @@ ifeq (${IMG_RESULT}, load)
 else ifeq (${IMG_RESULT}, cache)
 	# if cache is specified, image will only be available in the build cache, it won't be pushed or loaded
 	# therefore no PUSH_ARG will be specified
-else
+else ifeq (${IMG_RESULT}, push)
 	export PUSH_ARG="--push"
+else
+  $(error IMG_RESULT must be cache, load, or push)
 endif
 
 .PHONY: buildx-builder

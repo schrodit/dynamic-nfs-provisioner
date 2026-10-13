@@ -1,3 +1,15 @@
+0.12.0-rc.1 / Prepared 2026-10-13 — unpublished
+================================================
+
+* Update Go to 1.27.2, public Kubernetes clients to 0.37.1, and external-provisioner to 13.1.0. Remove Maya, Kubernetes monorepo dependencies, and legacy staging/protobuf overrides. Patch reachable Go vulnerabilities.
+* Preserve provisioner identity, configuration precedence, resource names, export behavior, and legacy finalizer defaults. Use namespace-scoped Lease leader election.
+* Pin Alpine 3.24.2 and the Go builder; produce static binaries for four architectures. Remove third-party glibc. Kernel image runtime qualification remains pending.
+* Remove PodSecurityPolicy. **Migration:** `rbac.pspEnabled=true` and `nfsProvisioner.privileged=false` are rejected; configure privileged admission for kernel server namespaces. Harden the controller and reduce RBAC. Newly generated server pods disable API-token automounting.
+* Fix Helm GC=false omission and preserve UID/GID zero values. Add schema validation and immutable image digest overrides. Review intended GC behavior before upgrading an old chart that omitted false.
+* Migrate to Ginkgo v2 and current Python/Ansible tooling. Add fresh-install, cross-node persistence, upgrade, rollback, GC, reclamation, and I/O recovery gates for Kubernetes 1.35–1.37 on amd64/arm64.
+* Fix namespace handling and failure propagation in the server updater; add preview, explicit context, full-image rollback, and bounded waits.
+* Prepare fork-specific candidate references under `ghcr.io/schrodit`. Publishing is disabled; candidate images are not claimed to exist. arm/v7 and ppc64le are build targets without runtime qualification. See [validation](docs/update-validation.md) and [migration](docs/tutorial/upgrade.md).
+
 0.11.0 / 2023-12-08
 ========================
 * add support for specifying mountOptions to default StorageClass ([#164](https://github.com/openebs/dynamic-nfs-provisioner/pull/164),[@pentago](https://github.com/farcaller) [@dsharma-dc](https://github.com/dsharma-dc))

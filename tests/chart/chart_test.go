@@ -104,8 +104,8 @@ func TestDigestOverridesTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v: %s", err, output)
 	}
-	if !strings.Contains(string(output), "openebs/provisioner-nfs@"+digest) ||
-		!strings.Contains(string(output), "openebs/nfs-server-alpine@"+digest) {
+	if !strings.Contains(string(output), "ghcr.io/schrodit/provisioner-nfs@"+digest) ||
+		!strings.Contains(string(output), "ghcr.io/schrodit/nfs-server-alpine@"+digest) {
 		t.Fatal("immutable image references were not used")
 	}
 }

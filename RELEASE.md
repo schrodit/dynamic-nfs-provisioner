@@ -1,40 +1,33 @@
-# Release Process
-OpenEBS Dynamic NFS PV Provisioner follows a monthly release cadence. The scope of the release is determined by contributor availability. The scope is published in the [Release Tracker Projects](https://github.com/orgs/openebs/projects).
+# Release preparation
 
-## Release Candidate Verification Checklist
+The current source candidate is **0.12.0-rc.1**. It has not been published. Workflows have read-only repository permissions: branch pushes run checks, and manual candidate workflows validate or upload CI artifacts. There are no image pushes, Git tags, GitHub releases, or Helm repository publications in these workflows.
 
-Every release has release candidate builds that are created starting from the third week into the release. These release candidate builds help to freeze the scope and maintain the quality of the release. The release candidate builds will go through:
-- Platform Verification
-- Regression and Feature Verification Automated tests.
-- Exploratory testing by QA engineers
-- Strict security scanners on the container images
-- Upgrade from previous releases
-- Beta testing by users on issues that they are interested in.
-- Dogfooding on OpenEBS workload and e2e infrastructure clusters.
+## Candidate artifacts
 
-If any issues are found during the above stages, they are fixed and a new release candidate builds are generated.
+Keep chart `version`, `appVersion`, raw manifest image tags, and `CHANGELOG.md` aligned. Run:
 
-Once all the above tests are completed, a main release tagged image is published.
+```sh
+python3 hack/prepare-release.py artifacts
+```
 
-## Release Tagging
+The output contains the chart package, raw and rendered manifests, changelog, provenance manifest, and SHA256SUMS. The tool refuses to overwrite a nonempty output directory. Intended image references are `ghcr.io/schrodit/provisioner-nfs:VERSION` and `ghcr.io/schrodit/nfs-server-alpine:VERSION`; they are not claimed to exist. The GitHub source is this fork, and no OpenEBS registry credentials are assumed.
 
-Dynamic NFS PV Provisioner is released as a set of container images with a versioned tag.
+Packaging does not create images or establish compatibility. The manifest records the source commit and whether the checkout contains uncommitted changes. Repackage from the clean final commit before distributing a candidate.
 
-Before creating a release, the repo owner needs to create a separate branch from the active branch, which is `develop`. Name of the branch should follow the naming convention of `v1.9.x` if the release is for v1.9.0.
+## Qualification gates
 
-Once the release branch is created, changelog from `changelogs/unreleased` needs to be moved to release specific folder `changelogs/v1.9.x`, if release branch is `v1.10.x` then folder will be `changelogs/v1.10.x`.
+Run `Validate release candidate` manually on the exact candidate commit when hosted CI is available. It runs the shared checks before attaching candidate files as a CI artifact. Preserve the following evidence:
 
-The format of the release tag is either "Release-Name-RC1" or "Release-Name" depending on whether the tag is a release candidate or a release. (Example: v1.9.0-RC1 is a GitHub release tag for the release build. v1.9.0 is the release tag that is created after the release criteria are satisfied by the release candidate builds.)
+- Reproducible modules, unit/chart/script tests, vet, targeted race tests, and reachable Go vulnerability results.
+- Both image builds for amd64, arm64, arm/v7, and ppc64le, plus image scan results. arm/v7 and ppc64le remain build targets without a runtime support claim.
+- Fresh installs and the full Go suite on Kubernetes 1.35.9, 1.36.5, and 1.37.1, on native amd64 and arm64 runners.
+- Upgrade from immutable chart 0.11.0, GC enabled/disabled, custom server namespace, resource/finalizer preservation, cross-node RWX data and ownership, client restarts, controller rollback, and server upgrade/rollback.
+- Recorded server rollout durations and successful client I/O gaps. Delete cleanup and Retain data must survive the documented reclamation/GC checks without manually deleting retained resources.
 
-Once the release is triggered, Github Actions release workflow has to be monitored. Once the release workflow is passed images are pushed to docker hub and quay.io. Images can be verified by going through docker hub and quay.io. Also the images shouldn't have any high-level vulnerabilities.
+Pending or failed runtime gates keep the candidate unqualified. Local evidence and limitations are in [docs/update-validation.md](docs/update-validation.md). Image scan failures require remediation or an explicitly reviewed exception before a release; they must not be silently ignored.
 
-Images for the different components are published at the following location:
+## Future publication
 
-- Dynamic NFS PV Provisioner <br />
-    https://quay.io/repository/openebs/provisioner-nfs?tab=tags <br />
-    https://hub.docker.com/r/openebs/provisioner-nfs/tags <br />
+Publication is disabled for now. A later, separately authorized release task must enable a publisher for this fork, verify GHCR package ownership and access, push both versioned images, record their digests, and distribute the matching chart package. Verify that published artifacts resolve before updating installation examples or claiming a supported range. Do not publish mutable `latest` tags for a release candidate.
 
-Once a release is created, update the release description with the changelog mentioned in `changelog/v1.9.x`. Once the changelogs are updated in the release, the repo owner needs to create a PR to `develop` with the following details:
-1. update the changelog from `changelog/v1.9.x` to `CHANGELOG.md`
-2. If a release is not an RC tag then PR should include the changes to remove `changelog/v1.9.x` folder.
-3. If a release is an RC tag then PR should include the changes to remove the changelog from `changelog/v1.9.x` which are already mentioned in `CHANGELOG.md` as part of step number 1.
+Use `v0.12.0-rc.1` for the candidate Git tag only when publishing is authorized. Promotion to a stable version requires a new matching source version and qualification evidence for that version. Consult [upgrade and rollback](docs/tutorial/upgrade.md) for migration boundaries; controller and server rollback are separate operations.

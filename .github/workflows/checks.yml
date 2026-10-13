@@ -19,6 +19,8 @@ jobs:
           version: v4.3.0
       - name: Unit tests, chart regressions, and vet
         run: make license-check test verify-src
+      - name: Upgrade script regression tests
+        run: python3 -m unittest discover -s tests/upgrade -p 'test_*.py'
       - name: Compile integration suite
         run: go test ./tests -run '^$'
       - name: Concurrent provisioning checks
@@ -146,6 +148,8 @@ jobs:
         with:
           name: cluster-${{ matrix.kubernetes }}-${{ matrix.runner }}
           path: artifacts
+  upgrade:
+    uses: ./.github/workflows/upgrade-checks.yml
   legacy-runner:
     runs-on: ubuntu-24.04
     steps:

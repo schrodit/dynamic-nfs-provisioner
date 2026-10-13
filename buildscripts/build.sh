@@ -12,7 +12,7 @@ export GOARCH=${XC_ARCH:-$(go env GOARCH)}
 version=${RELEASE_TAG:-ci}
 version=${version#v}
 commit=${GIT_COMMIT:-$(git rev-parse HEAD 2>/dev/null || printf unknown)}
-server_image=${NFSSERVERIMG:-openebs/nfs-server-alpine:${version}}
+server_image=${NFSSERVERIMG:-ghcr.io/schrodit/nfs-server-alpine:${version}}
 destination="bin/${name}/${GOOS}_${GOARCH}/${command_name}"
 mkdir -p "$(dirname "$destination")"
 go build -mod=readonly -trimpath -tags "${GO_BUILD_TAGS:-}" -ldflags \

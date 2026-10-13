@@ -6,3 +6,5 @@ profile.out
 buildscripts/provisioner-nfs/provisioner-nfs
 vendor/
 **/.idea
+/artifacts/
+**/__pycache__/

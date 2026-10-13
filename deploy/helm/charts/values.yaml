@@ -41,7 +41,7 @@ nfsProvisioner:
     # Make sure that registry name end with a '/'.
     # For example : quay.io/ is a correct value here and quay.io is incorrect
     registry:
-    repository: openebs/provisioner-nfs
+    repository: ghcr.io/schrodit/provisioner-nfs
     tag:
     # Optional immutable image digest; overrides tag when set.
     digest: ""
@@ -51,11 +51,11 @@ nfsProvisioner:
   # garbage collecting an NFS backend PVC if the NFS PVC is deleted.
   enableGarbageCollection: true
   # Specify image name of nfs-server-alpine used for creating nfs server deployment
-  # If not mentioned, default value openebs/nfs-server-alpine:tag will be used where
+  # If not mentioned, default value ghcr.io/schrodit/nfs-server-alpine:tag will be used where
   # the tag will be the same as a provisioner-nfs image tag
   nfsServerAlpineImage:
     registry:
-    repository: openebs/nfs-server-alpine
+    repository: ghcr.io/schrodit/nfs-server-alpine
     tag:
     # Optional immutable image digest; overrides tag when set.
     digest: ""

@@ -1,34 +1,22 @@
-name: Release Charts
-
+# Copyright 2026 The OpenEBS Authors.
+# Licensed under the Apache License, Version 2.0.
+name: Prepare candidate artifacts
 on:
-  push:
-    paths:
-      - "deploy/helm/**"
-    branches:
-      - develop
-
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  package:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           version: v4.3.0
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
-        env:
-          CR_TOKEN: "${{ secrets.CR_TOKEN }}"
+      - name: Prepare artifacts without publishing
+        run: python3 hack/prepare-release.py artifacts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          charts_dir: deploy/helm
+          name: release-candidate
+          path: artifacts

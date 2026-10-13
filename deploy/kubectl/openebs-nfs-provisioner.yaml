@@ -92,7 +92,7 @@ spec:
       containers:
       - name: openebs-provisioner-nfs
         imagePullPolicy: IfNotPresent
-        image: openebs/provisioner-nfs:0.11.0
+        image: ghcr.io/schrodit/provisioner-nfs:0.12.0-rc.1
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -152,7 +152,7 @@ spec:
         # OPENEBS_IO_NFS_SERVER_IMG defines the nfs-server-alpine image name to be used
         # while creating nfs volume
         - name: OPENEBS_IO_NFS_SERVER_IMG
-          value: openebs/nfs-server-alpine:0.11.0
+          value: ghcr.io/schrodit/nfs-server-alpine:0.12.0-rc.1
         # LEADER_ELECTION_ENABLED is used to enable/disable leader election. By default
         # leader election is enabled.
         #- name: LEADER_ELECTION_ENABLED

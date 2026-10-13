@@ -15,114 +15,91 @@
 # limitations under the License.
 #
 
-set -e
+set -euo pipefail
 
-print_help() {
-cat << EOF
-Usage:
-    $0 <options> IMAGE_TAG
-
-Example:
-    $0 -n nfs-ns 0.7.1
-
-IMAGE_TAG is required to execute this script.
-
-By default, this script uses 'openebs' namespace to search nfs-server deployment.
-If you have used different namespace for nfs-server deployment then you must provide
-the namespace using option(-n).
-
-Supported options are as below:
-    -h			Show this message and exit
-    -n			namespace for nfs-server deployment. Default namespace used is 'openebs'
-    -d			nfs-server deployment name. If option '-d' is not mentioned then this script will
-                        upgrade all the nfs-server deployments available in 'openebs' or (-n NS) namespace.
-EOF
+usage() {
+    cat <<'HELP'
+Usage: upgrade-nfs-server.sh [options] IMAGE_TAG
+       upgrade-nfs-server.sh [options] --image REPOSITORY:TAG_OR_DIGEST
+  -n NAMESPACE   Server namespace (default: openebs)
+  -d DEPLOYMENT  Update one server; omit to update labelled servers sequentially
+  -c CONTEXT     Explicit kubectl context (otherwise the current context)
+  -t TIMEOUT     Rollout timeout (default: 5m)
+  --dry-run      Show changes without patching or restarting servers
+  --image IMAGE  Full image reference, also used to restore a previous image
+  -h, --help     Show this help
+HELP
 }
-
-# NFS_SERVER_NS represent the namespace for nfs server deployment
-# By default, it is set to 'openebs'.
-NFS_SERVER_NS=openebs
-
-# IMAGE_TAG represent the version for nfs server image
-IMAGE_TAG=
-
-# DEPLOYMENTS represent the nfs-server deployment name/name-list
-DEPLOYMENTS=
-
-# list_deployment list nfs-server deployment in NFS_SERVER_NS namespace
-list_deployment() {
-    local -n deploy=$1
-    deploy=$(kubectl get deployment -n ${NFS_SERVER_NS} -l openebs.io/nfs-server --no-headers -o custom-columns=:.metadata.name)
-}
-
-# upgrade_deployment patch the given deployment in NFS_SERVER_NS with image-tag IMAGE_TAG
-upgrade_deployment() {
-    deploymentName=$1
-
-    existingImage=$(kubectl get deployment -n openebs ${deploymentName} -o jsonpath='{.spec.template.spec.containers[0].image}')
-
-    repo=${existingImage%:*}
-    newImage=${repo}:${IMAGE_TAG}
-    patchJson="{\"spec\": {\"template\": {\"spec\": {\"containers\" : [{\"name\" : \"nfs-server\", \"image\" : \"${newImage}\"}]}}}}"
-
-    kubectl patch deploy -n ${NFS_SERVER_NS} ${deploymentName} -p "${patchJson}" > /dev/null
-    exitCode=$?
-    if [ $exitCode -ne 0 ]; then
-        echo "ERROR: Failed to patch ${deploymentName} exit code: $exitCode"
-        exit
-    fi
-
-    rolloutStatus=$(kubectl rollout status -n ${NFS_SERVER_NS} deployment/${deploymentName})
-    exitCode=$?
-    if [[ ($exitCode -ne 0) || ! (${rolloutStatus} =~ "successfully rolled out") ]]; then
-        echo "ERROR: Failed to rollout status for ${deploymentName} exit code: $exitCode"
-        exit
-    fi
-}
-
-# options followed by ':' needs an argument
-# see `man getopt`
-shortOpts=hn:d:
-
-# store the output of getopt so that we can assign it to "$@" using set command
-# since we are using "--options" in getopt, arguments are passed via -- "$@"
-PARSED=$(getopt --options ${shortOpts} --name "$0" -- "$@")
-if [[ $? -ne 0 ]]; then
-    echo "invalid arguments"
-    exit 1
-fi
-# assign arguments to "$@"
-eval set -- "${PARSED}"
-
-while [[ $# -gt 0 ]]
-do
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+namespace=openebs
+deployment=
+context=
+timeout=5m
+image=
+tag=
+preview=false
+while [ "$#" -gt 0 ]; do
     case "$1" in
-        -h)
-            print_help
-            exit 0
-            ;;
-        -n)
-            shift
-            NFS_SERVER_NS=$1
-            ;;
-        -d)
-            shift
-            DEPLOYMENTS=$1
-            ;;
-       ## argument without options is mentioned after '--'
-        --)
-            shift
-            IMAGE_TAG=$1
-            break
+        -h|--help) usage; exit 0 ;;
+        --dry-run) preview=true; shift ;;
+        -n|-d|-c|-t|--image)
+            [ "$#" -ge 2 ] && [ -n "$2" ] || fail "Missing value for $1"
+            case "$1" in
+                -n) namespace=$2 ;; -d) deployment=$2 ;; -c) context=$2 ;;
+                -t) timeout=$2 ;; --image) image=$2 ;;
+            esac
+            shift 2 ;;
+        -*) fail "Unknown option: $1" ;;
+        *) [ -z "$tag" ] || fail 'Only one image tag is allowed'; tag=$1; shift ;;
     esac
-    shift   # Expose the next argument
 done
-
-[[ -z $IMAGE_TAG ]] && print_help && exit 0
-
-[[ -z $DEPLOYMENTS ]] && list_deployment DEPLOYMENTS
-
-for i in ${DEPLOYMENTS}; do
-    upgrade_deployment ${i}
-    echo "Deployment ${NFS_SERVER_NS}/${i} updated with image tag ${IMAGE_TAG}"
-done
+[ -n "$image" ] || [ -n "$tag" ] || fail 'An image tag or --image is required'
+[ -z "$image" ] || [ -z "$tag" ] || fail 'Use either a tag or --image'
+[[ "$namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || fail 'Invalid namespace'
+[[ -z "$deployment" || "$deployment" =~ ^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$ ]] || fail 'Invalid deployment name'
+[[ "$timeout" =~ ^[1-9][0-9]*[smh]$ ]] || fail 'Timeout must be a positive duration such as 5m'
+[[ -z "$tag" || "$tag" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]] || fail 'Invalid image tag'
+[[ -z "$image" || "$image" =~ ^[a-zA-Z0-9][a-zA-Z0-9_./:@-]*$ ]] || fail 'Invalid image reference'
+command -v python3 >/dev/null || fail 'python3 is required'
+kube=(kubectl --request-timeout=30s)
+if [ -n "$context" ]; then kube+=(--context "$context"); fi
+if [ -n "$deployment" ]; then
+    deployments=$deployment
+else
+    deployments=$("${kube[@]}" get deployment -n "$namespace" -l openebs.io/nfs-server \
+        -o 'jsonpath={range .items[*]}{.metadata.name}{"\n"}{end}')
+fi
+[ -n "$deployments" ] || fail "No NFS server deployments found in $namespace"
+while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    object=$("${kube[@]}" get deployment -n "$namespace" "$name" -o json)
+    existing=$(python3 - "$object" <<'PYTHON'
+import json, sys
+obj = json.loads(sys.argv[1])
+if "openebs.io/nfs-server" not in obj["metadata"].get("labels", {}):
+    sys.exit("Refusing to modify an unlabelled NFS deployment")
+containers = [c for c in obj["spec"]["template"]["spec"]["containers"] if c["name"] == "nfs-server"]
+if len(containers) != 1:
+    sys.exit("Expected exactly one nfs-server container")
+print(containers[0]["image"])
+PYTHON
+    )
+    target=$image
+    if [ -z "$target" ]; then
+        repository=${existing%%@*}
+        # Strip a tag only from the last path component, preserving registry ports.
+        if [[ "${repository##*/}" == *:* ]]; then repository=${repository%:*}; fi
+        target=$repository:$tag
+    fi
+    printf '%s/%s: %s -> %s\n' "$namespace" "$name" "$existing" "$target"
+    if [ "$preview" = true ] || [ "$existing" = "$target" ]; then continue; fi
+    patch=$(python3 - "$target" <<'PYTHON'
+import json, sys
+print(json.dumps({"spec": {"template": {"spec": {"containers": [
+    {"name": "nfs-server", "image": sys.argv[1]}]}}}}))
+PYTHON
+    )
+    "${kube[@]}" patch deployment -n "$namespace" "$name" --type=strategic -p "$patch"
+    "${kube[@]}" rollout status -n "$namespace" "deployment/$name" \
+        --timeout="$timeout" --request-timeout="$timeout"
+done <<< "$deployments"

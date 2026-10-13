@@ -8,6 +8,8 @@ helm upgrade --install openebs-nfs ./deploy/helm/charts --namespace openebs \
   --set fullnameOverride=openebs-nfs-provisioner \
   --set nfsStorageClass.name=openebs-rwx \
   --set nfsStorageClass.backendStorageClass=openebs-hostpath \
+  --set nfsProvisioner.image.repository=openebs/provisioner-nfs \
+  --set nfsProvisioner.nfsServerAlpineImage.repository=openebs/nfs-server-alpine \
   --set nfsProvisioner.image.tag=ci --set nfsProvisioner.nfsServerAlpineImage.tag=ci \
   --set analytics.enabled=false --wait --timeout=5m
 kubectl get storageclass openebs-rwx

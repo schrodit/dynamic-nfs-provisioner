@@ -1,62 +1,39 @@
-# QuickStart
+# Quickstart
+
+The 0.12.0-rc.1 candidate is prepared but unpublished. Kubernetes 1.35–1.37 and Linux amd64/arm64 are test targets until the runtime gates pass; see [validation](update-validation.md).
+
 ## Prerequisites
-Before installing nfs-provisioner make sure your Kubernetes cluster meets the following prerequisites:
 
-1. Kubernetes version 1.18
-2. This guide assumes you have a backend storageclass available, either a default one or any other (e.g: https://openebs.io/docs/user-guides/localpv-hostpath).
-3. NFS Client is installed on all nodes that will run a pod that mounts an `openebs-rwx` volume.
-   Here's how to prepare an NFS client on some common Operating Systems:
+Use Linux Kubernetes nodes with NFS client packages (`nfs-common` on Debian/Ubuntu, `nfs-utils` on RPM distributions). Server nodes must have kernel NFS support (`nfsd`). Install a backend StorageClass separately; CI uses OpenEBS LocalPV Hostpath 4.6.0. Use Helm with `--reset-then-reuse-values` support for upgrades and a compatible kubectl.
 
-| OPERATING SYSTEM |  How to install NFS Client package                                |
-| ---------------- | -------------------------------------------------------- |
-| RHEL/CentOS/Fedora  |run *sudo yum install nfs-utils -y*      |
-| Ubuntu/Debian   |run *sudo apt install nfs-common -y*     |
-| MacOS     |Should work out of the box |
-| FreeBSD  |Edit the */etc/rc.conf* file by setting or appending *nfs_client_enable="YES"* |
-| Windows   |1. Start PowerShell as Administrator.<br/>2. In case of Windows server, run *Install-WindowsFeature NFS-Client*<br/>3. In case of Windows host with a Desktop environment, run *Enable-WindowsOptionalFeature -FeatureName ServicesForNFS-ClientOnly, ClientForNFS-Infrastructure -Online -NoRestart* |
+Read the [security requirements](security.md). The controller runs without root. Kernel NFS server pods are privileged, including when they run in a custom namespace.
 
-## Install
-### Install NFS Provisioner through kubectl
-To install NFS Provisioner through kubectl, run below command:
-```
-kubectl apply -f https://openebs.github.io/charts/nfs-operator.yaml
-```
+## Install from this checkout
 
-Above command will install the NFS Provisioner in *openebs* namespace and creates a Storageclass named *openebs-rwx*, with backend Storageclass *openebs-hostpath*.
+Build both local images without publishing, then load them into your disposable cluster using its image-loading mechanism:
 
-Above installation will use latest stable release tag. To install a specific release version of nfs-provisioner, you can download YAML file from [here](https://github.com/openebs/charts/tree/gh-pages).
-
-
-### Install NFS Provisioner through Helm
-You can install NFS Provisioner through helm using below command:
-
-```
-helm repo add openebs https://openebs.github.io/charts
-helm repo update
-helm install openebs openebs/openebs -n openebs --create-namespace --set nfs-provisioner.enabled=true
+```sh
+make provisioner-nfs-image nfs-server-image
+# For Minikube:
+minikube image load --daemon openebs/provisioner-nfs:ci
+minikube image load --daemon openebs/nfs-server-alpine:ci
+kubectl create namespace openebs
+kubectl create namespace nfs-servers
+kubectl label namespace nfs-servers pod-security.kubernetes.io/enforce=privileged --overwrite
+helm upgrade --install nfs ./deploy/helm/charts -n openebs \
+  --set nfsProvisioner.nfsServerNamespace=nfs-servers \
+  --set nfsProvisioner.image.repository=openebs/provisioner-nfs \
+  --set nfsProvisioner.image.tag=ci \
+  --set nfsProvisioner.nfsServerAlpineImage.repository=openebs/nfs-server-alpine \
+  --set nfsProvisioner.nfsServerAlpineImage.tag=ci \
+  --set nfsStorageClass.name=openebs-rwx \
+  --set nfsStorageClass.backendStorageClass=openebs-hostpath \
+  --set analytics.enabled=false --wait --timeout=5m
 ```
 
-<details>
-  <summary>Click here for configuration options.</summary>
+Replace the backend StorageClass and context for your cluster. CI images are local development references. Deploy qualified release images by immutable digest when they become available. The raw manifest in `deploy/kubectl/` uses the prepared candidate references and needs both references replaced with available images before applying. Neither install path installs a backend provisioner.
 
-  1. Install OpenEBS NFS Provisioner without NDM and Dynamic LocalPV Provisioner.
-
-     You may choose to exclude the NDM and LocalPV subchart from installation if...
-     - you want to only use OpenEBS NFS Provisioner
-     - you already have NDM and LocalPV installed. Check if
-        - NDM pods exist with the command `kubectl get pods -n openebs -l 'openebs.io/component-name in (ndm, ndm-operator)'`
-        - LocalPV pods exists with the command `kubectl get pods -n openebs -l 'openebs.io/component-name in (openebs-localpv-provisioner)'`
-
-```console
-helm install openebs openebs/openebs -n openebs --create-namespace \
-  --set ndm.enabled=false \
-  --set ndmOperator.enabled=false \
-  --set localprovisioner.enabled=false  \
-  --set nfs-provisioner.enabled=true
-```
-</details>
-
-[Click here](https://github.com/openebs/dynamic-nfs-provisioner/tree/develop/deploy/helm/charts) for detailed instructions on using the Helm chart.
+The old standalone NFS Helm repository is unavailable. This fork installs from the checkout or a locally prepared chart package; it does not publish a Helm repository yet. See the [chart reference](../deploy/helm/charts/README.md) and [upgrade guide](tutorial/upgrade.md).
 
 ## Provision NFS Volume
 To provision NFS Volume, NFS Provisioner creates the following resources:

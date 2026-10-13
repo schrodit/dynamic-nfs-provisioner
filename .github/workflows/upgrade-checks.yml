@@ -1,0 +1,83 @@
+# Copyright 2026 The OpenEBS Authors.
+# Licensed under the Apache License, Version 2.0.
+name: Upgrade compatibility
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upgrade:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        kubernetes: [v1.35.9, v1.36.5, v1.37.1]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        gc: ['true', 'false']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - name: Prepare host kernel and NFS clients
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nfs-common
+          sudo modprobe nfsd
+      - name: Build native images
+        run: make provisioner-nfs-image nfs-server-image
+      - uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
+        with:
+          minikube-version: 1.39.0
+          driver: docker
+          kubernetes-version: ${{ matrix.kubernetes }}
+          nodes: 2
+          cpus: 2
+          memory: 2800m
+          start-args: '--install-addons=false'
+      - name: Prepare nodes and candidate images
+        run: |
+          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
+            minikube ssh -n "$node" -- 'sudo apt-get update && sudo apt-get install -y nfs-common'
+          done
+          minikube image load --daemon openebs/provisioner-nfs:ci
+          minikube image load --daemon openebs/nfs-server-alpine:ci
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Exercise controller and server upgrade, rollback, and reclaim
+        env:
+          GC_MODE: ${{ matrix.gc }}
+        run: |
+          ./tests/install-localpv.sh
+          mkdir -p artifacts
+          fixture=(python3 tests/upgrade/fixtures.py --context minikube --gc "$GC_MODE" --state "$PWD/artifacts/state.json")
+          "${fixture[@]}" seed
+          "${fixture[@]}" verify
+          "${fixture[@]}" upgrade-controller
+          "${fixture[@]}" restart-clients
+          "${fixture[@]}" rollback-controller
+          "${fixture[@]}" upgrade-controller
+          "${fixture[@]}" server-cycle
+          "${fixture[@]}" restart-clients
+          "${fixture[@]}" verify-reclaim
+          "${fixture[@]}" verify-gc
+      - name: Save cluster diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          kubectl get pods,pvc,pv,deploy,svc -A -o yaml > artifacts/resources.yaml || true
+          kubectl get events -A > artifacts/events.txt || true
+          kubectl logs -n nfs-upgrade deployment/nfs-upgrade-nfs-provisioner --all-containers > artifacts/controller.log || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: upgrade-${{ matrix.kubernetes }}-${{ matrix.runner }}-gc-${{ matrix.gc }}
+          path: artifacts
