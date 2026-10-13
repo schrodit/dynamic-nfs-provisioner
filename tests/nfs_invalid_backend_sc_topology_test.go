@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var _ = Describe("TEST PROVISIONING WITH DIFFERENT TOPOLOGY FOR BACKEND SC", func() {
+var _ = Describe("TEST PROVISIONING WITH DIFFERENT TOPOLOGY FOR BACKEND SC", Ordered, func() {
 	var (
 		// PVC related options
 		applicationNamespace = "default"
@@ -46,7 +46,7 @@ var _ = Describe("TEST PROVISIONING WITH DIFFERENT TOPOLOGY FOR BACKEND SC", fun
 		// NFS Provisioner related options
 		openebsNamespace            = "openebs"
 		nfsProvisionerLabel         = "openebs.io/component-name=openebs-nfs-provisioner"
-		nfsProvisionerContainerName = "openebs-provisioner-nfs"
+		nfsProvisionerContainerName = "openebs-nfs-provisioner"
 		nodeAffinityKeyValues       map[string][]string
 		backendScName               = "different-node-affinity"
 		backendScNodeAffinityLabel  = "invalid.io/invalid-nfs-label"
@@ -87,7 +87,7 @@ var _ = Describe("TEST PROVISIONING WITH DIFFERENT TOPOLOGY FOR BACKEND SC", fun
 
 			nfsProvisionerDeployment := deploymentList.Items[0]
 			for index, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					nfsProvisionerDeployment.Spec.
 						Template.
 						Spec.
@@ -295,7 +295,7 @@ var _ = Describe("TEST PROVISIONING WITH DIFFERENT TOPOLOGY FOR BACKEND SC", fun
 
 			nfsProvisionerDeployment := deploymentList.Items[0]
 			for cIndex, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					envIndex := 0
 					for _, envVar := range containerDetails.Env {
 						if envVar.Name == string(provisioner.NodeAffinityKey) {

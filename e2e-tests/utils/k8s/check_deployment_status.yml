@@ -15,13 +15,13 @@
       until: "'Running' in result.stdout"
       delay: 30
       retries: 15
-      
+
   when: lookup('env','DEPLOY_TYPE') == 'deployment'
 
 - block:
     - name: obtain the number of replicas.
       shell: kubectl get statefulset -n {{ app_ns }} -l {{ app_label }} -o custom-columns=:spec.replicas
-      register: rep_count 
+      register: rep_count
       until: "rep_count.rc ==0"
       delay: 60
       retries: 15

@@ -19,7 +19,7 @@ package tests
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ import (
  * 6. Delete NFS Storageclass
  */
 
-var _ = Describe("TEST WaitForFirstConsumer binding mode for NFS PV", func() {
+var _ = Describe("TEST WaitForFirstConsumer binding mode for NFS PV", Ordered, func() {
 	var (
 		accessModes          = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		capacity             = "2Gi"

@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      kubernetes:
+        patterns: ['k8s.io/*', 'sigs.k8s.io/*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /buildscripts/provisioner-nfs
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /nfs-server-container
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /e2e-tests
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /e2e-tests
+    schedule:
+      interval: weekly

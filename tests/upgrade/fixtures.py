@@ -4,9 +4,12 @@
 """Seed and verify disposable 0.11.0 upgrade fixtures using an explicit context."""
 import argparse
 import hashlib
+import io
 import json
 from pathlib import Path
 import subprocess
+import tarfile
+import tempfile
 
 CONTENT = "dynamic-nfs-upgrade-fixture-v1\n"
 POLICIES = ("Delete", "Retain")
@@ -37,15 +40,22 @@ class Fixtures:
         for ns in (self.namespace, self.servers):
             self.apply({"apiVersion": "v1", "kind": "Namespace", "metadata": {
                 "name": ns, "labels": {"pod-security.kubernetes.io/enforce": "privileged"}}})
-        subprocess.run([
-            "helm", "upgrade", "--install", "nfs-upgrade", "nfs-provisioner",
-            "--repo", self.args.repo, "--version", "0.11.0",
-            "--kube-context", self.args.context, "-n", self.namespace,
-            "--set", "nfsStorageClass.enabled=false", "--set", "analytics.enabled=false",
-            "--set", f"nfsProvisioner.enableGarbageCollection={self.args.gc}",
-            "--set", f"nfsProvisioner.nfsServerNamespace={self.servers}",
-            "--wait", "--timeout", "5m",
-        ], check=True)
+        # The old GitHub Pages repository no longer exists; use the exact release chart revision.
+        repo_root = Path(__file__).resolve().parents[2]
+        archive = subprocess.check_output([
+            "git", "-C", str(repo_root), "archive", "077394ced96d0368e9e3e412d03d0c881bb64e2f",
+            "deploy/helm/charts"])
+        with tempfile.TemporaryDirectory(prefix="nfs-baseline-chart-") as directory:
+            with tarfile.open(fileobj=io.BytesIO(archive)) as chart_archive:
+                chart_archive.extractall(directory, filter="data")
+            subprocess.run([
+                "helm", "upgrade", "--install", "nfs-upgrade", str(Path(directory) / "deploy/helm/charts"),
+                "--kube-context", self.args.context, "-n", self.namespace,
+                "--set", "nfsStorageClass.enabled=false", "--set", "analytics.enabled=false",
+                "--set", f"nfsProvisioner.enableGarbageCollection={self.args.gc}",
+                "--set", f"nfsProvisioner.nfsServerNamespace={self.servers}",
+                "--wait", "--timeout", "5m",
+            ], check=True)
         deployment = self.get("deployments", "-n", self.namespace)["items"][0]
         # Chart 0.11.0 omits the GC variable when false; set it explicitly for this baseline case.
         self.kubectl("set", "env", "-n", self.namespace, "deployment/" + deployment["metadata"]["name"],
@@ -137,7 +147,6 @@ def main():
     parser.add_argument("--state", type=Path, default=Path("/tmp/nfs-upgrade-state.json"))
     parser.add_argument("--backend", default="openebs-hostpath")
     parser.add_argument("--gc", choices=("true", "false"), default="true")
-    parser.add_argument("--repo", default="https://openebs.github.io/dynamic-nfs-provisioner")
     args = parser.parse_args()
     getattr(Fixtures(args), args.action)()
 

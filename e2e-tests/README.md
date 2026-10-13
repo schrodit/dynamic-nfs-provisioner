@@ -73,3 +73,9 @@ kubectl get e2er application-pod-failure -n e2e --no-headers -o custom-columns=:
 - Before performing any e2e-test read `steps performed`,`entry and exit criteria` section within `README.md` files. If you want to modify the test-logic or required more env's as per your need, you can modify test.yml or run_e2e_test file and then build the docker image and push it to some repository (from where you can pull images in your cluster environment). Update the container image name in run_e2e_test.yml file and take very care of ImagePullPolicy. Run the test with your changes.
 
 - If you find that your changes are generic and can be upstreamed as well, or you have idea with some new test-cases for dynamic-nfs-provisioner e2e, please raise a Pull Request with your changes and don't forget to attach ansible-playbooks logs for the updated e2e-tests. You can raise a issue as well if find any misbehaviour regarding test-cases. 
+
+## Compatibility runner maintenance
+
+The Go integration suite in `tests/` is the primary CI runner. The existing Ansible scenarios remain available with Python 3.14, ansible-core 2.21.5, kubernetes.core 6.6.0, and kubectl 1.37.1. Build the compatibility image from the repository root with `docker build -f e2e-tests/Dockerfile -t nfs-e2e:local .`.
+
+The runner no longer bundles old cloud authentication binaries. Supply a kubeconfig and any current exec credential plugins required by your cluster. Configure `KUBECTL_VERSION` at build time when targeting a different supported Kubernetes minor. Playbook failures now propagate to the container exit status.

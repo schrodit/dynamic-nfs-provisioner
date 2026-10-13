@@ -1,9 +1,9 @@
 ---
 #Fetching the details of the application pod
 - name: Getting the {{ application_name }} POD name
-  k8s_facts:
+  kubernetes.core.k8s_info:
     kind: Pod
-    namespace: "{{ app_ns }}" 
+    namespace: "{{ app_ns }}"
     label_selectors:
       - "{{ app_label }}"
   register: pod_name

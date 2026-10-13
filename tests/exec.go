@@ -18,6 +18,8 @@ package tests
 
 import (
 	"bytes"
+	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -54,7 +56,9 @@ func (k *KubeClient) Exec(command []string, pod, container, ns string) (string, 
 		return "", "", errors.Errorf("error while creating Executor: %v", err)
 	}
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdout: &stdout,
 		Stderr: &stderr,
 	})

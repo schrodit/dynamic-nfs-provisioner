@@ -6,7 +6,7 @@
         executable: /bin/bash
       register: result
       failed_when: "result.rc != 0"
-      
+
     - name: Replace the pvc placeholder with provider
       replace:
         path: "{{ application_deployment }}"
@@ -33,10 +33,10 @@
         regexp: "lkey: lvalue"
         replace: "{{ app_lkey }}: {{ app_lvalue }}"
 
-    - name: Enable/Disable I/O based liveness probe 
+    - name: Enable/Disable I/O based liveness probe
       shell: >
         sed -i '/#<!-- BEGIN ANSIBLE MANAGED BLOCK -->/
-        ,/#<!-- END ANSIBLE MANAGED BLOCK -->/d' 
+        ,/#<!-- END ANSIBLE MANAGED BLOCK -->/d'
         {{ application_deployment }}
       args:
         executable: /bin/bash

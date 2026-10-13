@@ -9,7 +9,7 @@
 - block:
 
     - name: Check if the application to be deleted is available.
-      k8s_facts:
+      kubernetes.core.k8s_info:
         kind: Pod
         label_selectors:
           - "{{ app_label }}"
@@ -24,8 +24,8 @@
         pvc_name: "{{ po_name.resources.0.spec.volumes.0.persistentVolumeClaim.claimName }}"
         pod_name: "{{ po_name.resources.0.metadata.name }}"
 
-    - name: Obtaining the PV name from PVC name. 
-      k8s_facts:
+    - name: Obtaining the PV name from PVC name.
+      kubernetes.core.k8s_info:
         kind: PersistentVolumeClaim
         namespace: "{{ app_ns }}"
         name: "{{ pvc_name }}"
@@ -41,36 +41,36 @@
         regexp: "testclaim"
         replace: "{{ lookup('env','APP_PVC') }}"
       when: app_pvc is defined
- 
+
     - name: Replace the storageclass placeholder with provider
       replace:
         path: "{{ app_deployer }}"
         regexp: "testclass"
         replace: "{{ lookup('env','PROVIDER_STORAGE_CLASS') }}"
       when: storage_class is defined
-    
+
     - block:
 
         - name: Get the application label values from env
           set_fact:
             app_lkey: "{{ app_label.split('=')[0] }}"
             app_lvalue: "{{ app_label.split('=')[1] }}"
-    
-        - name: Replace the application label placeholder 
+
+        - name: Replace the application label placeholder
           replace:
             path: "{{ app_deployer }}"
             regexp: "lkey: lvalue"
             replace: "{{ app_lkey }}: {{ app_lvalue }}"
       when: app_label is defined
-    
+
     - name: Delete the application deployment.
       shell: kubectl delete -f {{ app_deployer }} -n {{ app_ns }}
       args:
         executable: /bin/bash
       ignore_errors: true
-    
+
     - name: Check if the PVC is deleted.
-      k8s_facts:
+      kubernetes.core.k8s_info:
         kind: PersistentVolumeClaim
         namespace: "{{ app_ns }}"
         label_selectors:
@@ -79,10 +79,10 @@
       until: resource_list.resources | length < 1
       delay: 5
       retries: 120
-    
+
     - name: Check if the pods are deleted in the namespaces
       shell: >
-        kubectl get pods -n {{ app_ns }} 
+        kubectl get pods -n {{ app_ns }}
       args:
         executable: /bin/bash
       register: result
@@ -91,13 +91,13 @@
       retries: 60
 
     - name: Delete the namespace.
-      k8s:
+      kubernetes.core.k8s:
         state: absent
         kind: Namespace
         name: "{{ app_ns }}"
 
     - name: Check if the PV is deleted.
-      k8s_facts:
+      kubernetes.core.k8s_info:
         kind: PersistentVolume
         name: "{{ pvname }}"
         label_selectors:

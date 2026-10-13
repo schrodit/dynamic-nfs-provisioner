@@ -1,10 +1,10 @@
 ---
 - name: Obtain list of existing namespaces
   shell: >
-    kubectl get ns 
-    --no-headers 
+    kubectl get ns
+    --no-headers
     -o custom-columns=:metadata.name
-  args: 
+  args:
     executable: /bin/bash
   register: ns_list
 

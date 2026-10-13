@@ -17,8 +17,8 @@ limitations under the License.
 package hook
 
 import (
-	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 // ParseHooks will parse the given data and return generated Hook object

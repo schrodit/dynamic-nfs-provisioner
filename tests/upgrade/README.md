@@ -7,7 +7,7 @@ python3 tests/upgrade/fixtures.py seed --context DISPOSABLE_CONTEXT --gc true
 python3 tests/upgrade/fixtures.py verify --context DISPOSABLE_CONTEXT
 ```
 
-The seed installs chart 0.11.0, provisions Delete and Retain volumes in `nfs-upgrade`, and places their servers in `nfs-upgrade-servers`. It records PV/PVC/server identities, image references, NFS endpoints, Helm values, content checksums, and ownership. Two clients share each volume with a preference for different nodes.
+The seed requires full Git history and Python 3.12+. It installs chart 0.11.0 from immutable revision `077394ced96d0368e9e3e412d03d0c881bb64e2f` because the old Helm repository now returns 404. It provisions Delete and Retain volumes in `nfs-upgrade`, and places their servers in `nfs-upgrade-servers`. It records PV/PVC/server identities, image references, NFS endpoints, Helm values, content checksums, and ownership. Two clients share each volume with a preference for different nodes.
 
 After upgrading the controller or a server image, rerun `verify` against the original state file. Repeat with `--gc false` in a fresh disposable cluster. Preserve the state file between checks; `snapshot` intentionally replaces it. No automatic cleanup deletes retained storage.
 

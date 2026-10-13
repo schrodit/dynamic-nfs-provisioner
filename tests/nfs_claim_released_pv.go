@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +37,7 @@ import (
 	provisioner "github.com/openebs/dynamic-nfs-provisioner/provisioner"
 )
 
-var _ = Describe("TEST RECLAIM OF RELEASED NFS PV", func() {
+var _ = Describe("TEST RECLAIM OF RELEASED NFS PV", Ordered, func() {
 	var (
 		// application parameters
 		applicationNamespace = "default"

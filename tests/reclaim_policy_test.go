@@ -19,7 +19,7 @@ package tests
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	deploy "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/apps/v1/deployment"
@@ -41,7 +41,7 @@ import (
  * 1. Reclaim Policy behavior of volume
  */
 
-var _ = Describe("TEST NFS VOLUME WITH RECLAIM POLICY", func() {
+var _ = Describe("TEST NFS VOLUME WITH RECLAIM POLICY", Ordered, func() {
 	var (
 		openebsNamespace = "openebs"
 		maxRetryCount    = 10

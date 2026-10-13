@@ -3,7 +3,7 @@
 # The parameters required are
 #     - app_ns (Namespace on which the application is deployed)
 #     - app_label( Label of application in the form 'key=value'))
-#     - 
+#     -
 - name: Obtain the number of replicas.
   shell: kubectl get statefulset -n {{ app_ns }} -l {{ app_label }} -o custom-columns=:spec.replicas
   args:

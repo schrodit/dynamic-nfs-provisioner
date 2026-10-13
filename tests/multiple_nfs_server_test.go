@@ -19,7 +19,7 @@ package tests
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	deploy "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/apps/v1/deployment"
 	container "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/container"
@@ -37,7 +37,7 @@ import (
  * 4. Delete PVC pvc1 and pvc2
  */
 
-var _ = Describe("TEST MULTIPLE NFS SERVER", func() {
+var _ = Describe("TEST MULTIPLE NFS SERVER", Ordered, func() {
 	var (
 		accessModes          = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		capacity             = "2Gi"

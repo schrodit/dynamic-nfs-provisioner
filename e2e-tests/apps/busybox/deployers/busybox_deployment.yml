@@ -31,7 +31,7 @@ spec:
             claimName: testclaim
       containers:
         - name: busybox
-          image: gcr.io/google-containers/busybox
+          image: busybox:1.37.0
           command:
             - sh
             - -c

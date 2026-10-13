@@ -21,13 +21,13 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("TEST INVALID NAMESPACE FOR NFS SERVER", func() {
+var _ = Describe("TEST INVALID NAMESPACE FOR NFS SERVER", Ordered, func() {
 	var (
 		accessModes          = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		capacity             = "2Gi"

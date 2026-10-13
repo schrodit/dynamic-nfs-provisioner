@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	deploy "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/apps/v1/deployment"
@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var _ = Describe("TEST NFS SERVER RESOURCE REQUESTS AND LIMITS", func() {
+var _ = Describe("TEST NFS SERVER RESOURCE REQUESTS AND LIMITS", Ordered, func() {
 	var (
 		// PVC namespace
 		accessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}

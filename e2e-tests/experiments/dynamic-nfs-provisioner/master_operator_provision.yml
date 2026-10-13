@@ -18,5 +18,5 @@
       shell: kubectl delete -f "{{ ci_nfs_operator }}"
       args:
         executable: /bin/bash
-      ignore_errors: true        
+      ignore_errors: true
   when: lookup('env','ACTION') == "deprovision"

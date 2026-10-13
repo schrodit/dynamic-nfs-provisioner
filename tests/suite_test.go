@@ -23,13 +23,10 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
-
-	// auth plugins
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
@@ -40,14 +37,16 @@ var (
 	OpenEBSNamespace            = "openebs"
 )
 
+func init() {
+	flag.StringVar(&kubeConfigPath, "kubeconfig", os.Getenv("KUBECONFIG"), "path to kubeconfig to invoke kubernetes API calls")
+}
+
 func TestSource(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Test application deployment")
 }
 
 var _ = BeforeSuite(func() {
-	flag.StringVar(&kubeConfigPath, "kubeconfig", os.Getenv("KUBECONFIG"), "path to kubeconfig to invoke kubernetes API calls")
-	flag.Parse()
 	if err := initK8sClient(kubeConfigPath); err != nil {
 		panic(fmt.Sprintf("failed to initialize k8s client err=%s", err))
 	}

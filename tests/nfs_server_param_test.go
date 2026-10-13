@@ -19,7 +19,7 @@ package tests
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mayav1alpha1 "github.com/openebs/dynamic-nfs-provisioner/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ import (
 	provisioner "github.com/openebs/dynamic-nfs-provisioner/provisioner"
 )
 
-var _ = Describe("TEST NFS SERVER CONFIGURATION", func() {
+var _ = Describe("TEST NFS SERVER CONFIGURATION", Ordered, func() {
 	var (
 		// application values
 		deployName           = "busybox-nfs"

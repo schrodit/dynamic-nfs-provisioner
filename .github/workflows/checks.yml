@@ -1,0 +1,158 @@
+# Copyright 2026 The OpenEBS Authors.
+# Licensed under the Apache License, Version 2.0.
+name: Repository checks
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - name: Unit tests, chart regressions, and vet
+        run: make license-check test verify-src
+      - name: Compile integration suite
+        run: go test ./tests -run '^$'
+      - name: Concurrent provisioning checks
+        run: go test -race ./provisioner -run 'TestProvisioningTracker|TestNodeSelectorMatching|TestVolumeConfigPrecedence'
+      - name: Check dependency reproducibility
+        run: |
+          go mod tidy
+          go mod verify
+          git diff --exit-code -- go.mod go.sum
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage.txt
+  go-security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+      - name: Check reachable production vulnerabilities
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          govulncheck ./cmd/... ./pkg/... ./provisioner/...
+  multiarch-images:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: buildscripts/provisioner-nfs/provisioner-nfs.Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le
+          outputs: type=cacheonly
+          build-args: |
+            RELEASE_TAG=ci
+            GIT_COMMIT=${{ github.sha }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: nfs-server-container
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le
+          outputs: type=cacheonly
+          build-args: |
+            RELEASE_TAG=ci
+            GIT_COMMIT=${{ github.sha }}
+  integration:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        kubernetes: [v1.35.9, v1.36.5, v1.37.1]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - name: Prepare host kernel and NFS clients
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nfs-common
+          sudo modprobe nfsd
+      - name: Build native images
+        run: make provisioner-nfs-image nfs-server-image
+      - name: Smoke test controller runtime
+        run: |
+          docker run --rm --user 10001:10001 --read-only --cap-drop=ALL openebs/provisioner-nfs:ci --version
+          docker run --rm --entrypoint sh openebs/provisioner-nfs:ci -c 'command -v pgrep && test -r /etc/ssl/certs/ca-certificates.crt'
+      - name: Scan controller image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.75.0
+          image-ref: openebs/provisioner-nfs:ci
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Scan server image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.75.0
+          image-ref: openebs/nfs-server-alpine:ci
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
+        with:
+          minikube-version: 1.39.0
+          driver: docker
+          kubernetes-version: ${{ matrix.kubernetes }}
+          nodes: 2
+          cpus: 2
+          memory: 2800m
+          start-args: '--install-addons=false'
+      - name: Prepare nodes and candidate images
+        run: |
+          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
+            minikube ssh -n "$node" -- 'sudo apt-get update && sudo apt-get install -y nfs-common'
+          done
+          minikube image load --daemon openebs/provisioner-nfs:ci
+          minikube image load --daemon openebs/nfs-server-alpine:ci
+      - name: Install and validate deployment
+        run: |
+          ./tests/install-localpv.sh
+          ./tests/install-nfs-provisioner.sh
+          helm template nfs ./deploy/helm/charts -n openebs | kubectl apply --dry-run=server -f -
+      - name: Run Go integration suite
+        run: |
+          export KUBECONFIG="$HOME/.kube/config"
+          make sanity-test
+      - name: Save cluster diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          kubectl get pods,pvc,pv,deploy,svc -A -o yaml > artifacts/resources.yaml || true
+          kubectl get events -A > artifacts/events.txt || true
+          kubectl logs -n openebs deployment/openebs-nfs-provisioner --all-containers > artifacts/controller.log || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: cluster-${{ matrix.kubernetes }}-${{ matrix.runner }}
+          path: artifacts
+  legacy-runner:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build supported compatibility runner
+        run: docker build -f e2e-tests/Dockerfile -t nfs-e2e:ci .
+      - name: Validate compatibility playbooks
+        run: |
+          docker run --rm nfs-e2e:ci ansible-playbook --syntax-check -i /etc/ansible/hosts /e2e-tests/experiments/dynamic-nfs-provisioner/test.yml
+          docker run --rm nfs-e2e:ci ansible-playbook --syntax-check -i /etc/ansible/hosts /e2e-tests/apps/busybox/deployers/test.yml

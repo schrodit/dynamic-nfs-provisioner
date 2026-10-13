@@ -32,7 +32,7 @@
           template:
             src: "nfs-sc.j2"
             dest: "nfs-sc.yml"
-        
+
         - block:
 
             - name: Check if the OpenEBS-NFS-Provisioner is running
@@ -70,12 +70,12 @@
               delay: 15
               retries: 5
               with_items:
-                 - "{{ nfs_sc_name }}"             
+                 - "{{ nfs_sc_name }}"
 
           when: lookup('env','ACTION') == "provision"
 
         - block:
-           
+
             - name: Confirm pods has been deleted
               shell: kubectl get pods -n {{ namespace }}
               args:

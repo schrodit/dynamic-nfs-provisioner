@@ -3,14 +3,14 @@
 
    - name: Create some test data in the busybox app
      shell: >
-       kubectl exec {{ pod_name }} -n {{ ns }} 
+       kubectl exec {{ pod_name }} -n {{ ns }}
        -- sh -c "{{ item }}"
      args:
        executable: /bin/bash
      register: result
      failed_when: "result.rc != 0"
      with_items:
-       - "dd if=/dev/urandom of= /mnt/data/{{ testfile }} bs={{ blocksize }} count={{ blockcount }}"
+       - "dd if=/dev/urandom of=/mnt/data/{{ testfile }} bs={{ blocksize }} count={{ blockcount }}"
        - "md5sum  /mnt/data/{{ testfile }} >  /mnt/data/{{ testfile }}-pre-chaos-md5"
        - "sync;sync;sync"
 
@@ -64,7 +64,7 @@
        -- sh -c "md5sum  /mnt/data/{{ testfile }} >  /mnt/data/{{ testfile }}-post-chaos-md5"
      args:
        executable: /bin/bash
-     register: status 
+     register: status
      failed_when: "status.rc != 0"
 
    - name: Verify whether data is consistent
@@ -73,8 +73,8 @@
            -- sh -c "diff  /mnt/data/{{ testfile }}-pre-chaos-md5  /mnt/data/{{ testfile }}-post-chaos-md5"
      args:
        executable: /bin/bash
-     register: result 
-     failed_when: "result.rc != 0 or result.stdout != ''"   
+     register: result
+     failed_when: "result.rc != 0 or result.stdout != ''"
 
   when: status == "VERIFY"
 
@@ -87,22 +87,22 @@
        executable: /bin/bash
      register: newpod_name
 
-   - name: Delete/drop the files 
-     shell: > 
+   - name: Delete/drop the files
+     shell: >
        kubectl exec {{ newpod_name.stdout }} -n {{ ns }}
        -- sh -c "rm -f  /mnt/data/{{ testfile }}*"
      args:
        executable: /bin/bash
-     register: status 
+     register: status
 
-   - name: Verify successful file delete 
-     shell: > 
+   - name: Verify successful file delete
+     shell: >
            kubectl exec {{ newpod_name.stdout }} -n {{ ns }}
            -- ls  /mnt/data/
      args:
        executable: /bin/bash
-     register: result 
-     failed_when: "testfile in result.stdout"   
+     register: result
+     failed_when: "testfile in result.stdout"
 
   when: status == "DELETE"
 

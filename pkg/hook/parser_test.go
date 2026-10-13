@@ -19,8 +19,8 @@ package hook
 import (
 	"testing"
 
-	"sigs.k8s.io/yaml"
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/yaml"
 )
 
 func getTestHookData(version string) []byte {

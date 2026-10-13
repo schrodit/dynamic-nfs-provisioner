@@ -19,7 +19,7 @@ package tests
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	deploy "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/apps/v1/deployment"
 	container "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/container"
@@ -30,7 +30,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-var _ = Describe("TEST NFS PV", func() {
+var _ = Describe("TEST NFS PV", Ordered, func() {
 	var (
 		accessModes   = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		capacity      = "2Gi"

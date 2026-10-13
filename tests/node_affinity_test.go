@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
 	provisioner "github.com/openebs/dynamic-nfs-provisioner/provisioner"
@@ -29,7 +29,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-var _ = Describe("TEST NODE AFFINITY FEATURE", func() {
+var _ = Describe("TEST NODE AFFINITY FEATURE", Ordered, func() {
 	var (
 		// PVC related options
 		pvcName          = "node-affinity-pvc-nfs"
@@ -42,7 +42,7 @@ var _ = Describe("TEST NODE AFFINITY FEATURE", func() {
 		// NFS Provisioner related options
 		openebsNamespace            = "openebs"
 		nfsProvisionerLabel         = "openebs.io/component-name=openebs-nfs-provisioner"
-		nfsProvisionerContainerName = "openebs-provisioner-nfs"
+		nfsProvisionerContainerName = "openebs-nfs-provisioner"
 		nodeAffinityKeyValues       map[string][]string
 		futureNodeAffinityValue     = "kubernetes.io/nfs-storage-node"
 	)
@@ -81,7 +81,7 @@ var _ = Describe("TEST NODE AFFINITY FEATURE", func() {
 
 			nfsProvisionerDeployment := deploymentList.Items[0]
 			for index, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					nfsProvisionerDeployment.Spec.
 						Template.
 						Spec.
@@ -212,7 +212,7 @@ var _ = Describe("TEST NODE AFFINITY FEATURE", func() {
 
 			nfsProvisionerDeployment := deploymentList.Items[0]
 			for index, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					// Since node affinity env already exist let's update value
 					isEnvFound := false
 					for envIndex := range containerDetails.Env {
@@ -343,7 +343,7 @@ var _ = Describe("TEST NODE AFFINITY FEATURE", func() {
 
 			nfsProvisionerDeployment := deploymentList.Items[0]
 			for cIndex, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					envIndex := 0
 					for _, envVar := range containerDetails.Env {
 						if envVar.Name == string(provisioner.NodeAffinityKey) {

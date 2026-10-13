@@ -19,12 +19,12 @@ package hook
 import (
 	"testing"
 
-	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func buildPVCHook(annotations map[string]string, finalizer []string) *PVCHook {

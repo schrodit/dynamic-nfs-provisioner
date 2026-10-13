@@ -17,7 +17,7 @@ limitations under the License.
 package tests
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
 	provisioner "github.com/openebs/dynamic-nfs-provisioner/provisioner"
@@ -32,7 +32,7 @@ import (
  * 4. Rollback changes made to NFS Provisioner deployment
  */
 
-var _ = Describe("TEST NFS SERVER IMAGE CONFIGURATION", func() {
+var _ = Describe("TEST NFS SERVER IMAGE CONFIGURATION", Ordered, func() {
 	var (
 		openebsNamespace = "openebs"
 
@@ -43,9 +43,9 @@ var _ = Describe("TEST NFS SERVER IMAGE CONFIGURATION", func() {
 		scName      = "openebs-rwx"
 
 		nfsProvisionerLabel         = "openebs.io/component-name=openebs-nfs-provisioner"
-		nfsProvisionerContainerName = "openebs-provisioner-nfs"
+		nfsProvisionerContainerName = "openebs-nfs-provisioner"
 		nfsServerImage              = "openebs/nfs-server-alpine:ci"
-		prevVersionNFSServerImage   = "openebs/nfs-server-alpine:0.4.0"
+		prevVersionNFSServerImage   = "openebs/nfs-server-alpine:0.11.0"
 	)
 
 	When("nfs server image is updated", func() {
@@ -58,7 +58,7 @@ var _ = Describe("TEST NFS SERVER IMAGE CONFIGURATION", func() {
 			isENVImageExist := false
 
 			for index, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					for envIndex, env := range containerDetails.Env {
 						if env.Name == string(provisioner.NFSServerImageKey) {
 							nfsProvisionerDeployment.Spec.Template.Spec.Containers[index].Env[envIndex].Value = prevVersionNFSServerImage
@@ -141,7 +141,7 @@ var _ = Describe("TEST NFS SERVER IMAGE CONFIGURATION", func() {
 			isENVImageExist := false
 
 			for index, containerDetails := range nfsProvisionerDeployment.Spec.Template.Spec.Containers {
-				if containerDetails.Name == nfsProvisionerContainerName {
+				if containerDetails.Name == nfsProvisionerContainerName || containerDetails.Name == "openebs-provisioner-nfs" {
 					for envIndex, env := range containerDetails.Env {
 						if env.Name == string(provisioner.NFSServerImageKey) {
 							nfsProvisionerDeployment.Spec.Template.Spec.Containers[index].Env[envIndex].Value = nfsServerImage

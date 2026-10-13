@@ -19,7 +19,7 @@ package tests
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	nfshook "github.com/openebs/dynamic-nfs-provisioner/pkg/hook"
 	pvc "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/persistentvolumeclaim"
@@ -104,7 +104,7 @@ func buildTestHook() *nfshook.Hook {
 	return &hook
 }
 
-var _ = Describe("TEST NFS HOOK", func() {
+var _ = Describe("TEST NFS HOOK", Ordered, func() {
 	var (
 		accessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		capacity    = "2Gi"

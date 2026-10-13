@@ -33,10 +33,10 @@ export ARCH
 
 
 # list only the source code directories
-PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/client/generated\|tests')
+PACKAGES = ./cmd/... ./pkg/... ./provisioner/... ./tests/chart
 
 # list only the integration tests code directories
-PACKAGES_IT = $(shell go list ./... | grep -v 'vendor\|pkg/client/generated' | grep 'tests')
+PACKAGES_IT = ./tests
 
 # The images can be pushed to any docker/image registeries
 # like docker hub, quay. The registries are specified in 
@@ -150,7 +150,7 @@ format:
 .PHONY: vet
 vet:
 	@echo "--> Running go vet"
-	@go list ./... | grep -v "./vendor/*" | xargs go vet -composites
+	@go vet ./cmd/... ./pkg/... ./provisioner/... ./tests/...
 
 .PHONY: verify-src
 verify-src: 
@@ -191,9 +191,7 @@ license-check:
 
 .PHONY: sanity-test
 sanity-test:
-	@echo "--> Running sanity test";
-	@go install github.com/onsi/ginkgo/ginkgo@v1.16.4
-	@cd tests && sudo -E env "PATH=${PATH}" ginkgo -v -failFast
+	@go tool ginkgo --fail-fast --timeout=30m -v ./tests -- -kubeconfig="${KUBECONFIG}"
 
 .PHONY: push
 push:

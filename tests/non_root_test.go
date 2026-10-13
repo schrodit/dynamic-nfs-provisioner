@@ -19,7 +19,7 @@ package tests
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	deploy "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/apps/v1/deployment"
 	container "github.com/openebs/dynamic-nfs-provisioner/pkg/kubernetes/api/core/v1/container"
@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("TEST NON ROOT USER ACCESSING NFS VOLUME", func() {
+var _ = Describe("TEST NON ROOT USER ACCESSING NFS VOLUME", Ordered, func() {
 	var (
 		accessModes      = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 		openebsNamespace = "openebs"

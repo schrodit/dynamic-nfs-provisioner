@@ -38,3 +38,13 @@ This records evidence for the six phases in update-plan.md. Local execution uses
 - Fixed a discovered chart regression: GC=false previously omitted the environment variable, restoring the controller's true default. False is now passed explicitly; baseline fixtures patch the 0.11.0 Deployment to exercise the intended disabled case. File-permission UID/GID zero values also render explicitly.
 - Helm lint, default/custom-value rendering, schema rejection cases, digest precedence, reduced RBAC checks, and controller/server security regression tests pass. Existing server creation tests also pass.
 - Server-side validation, actual admission behavior, and provisioning under reduced RBAC remain Linux cluster release gates.
+
+## Phase 5: CI and integration tooling
+
+- Pinned maintained GitHub Actions to upstream release commit SHAs, selected Helm 4.3.0 and Minikube 1.39.0, and configured Kubernetes 1.35.9/1.36.5/1.37.1 on amd64 and arm64. Shared checks cover code and chart changes, native runtime smoke tests, all four image build architectures, Go vulnerability scans, and Trivy image scans. Dependabot tracks Go, actions, Docker, and Python dependencies.
+- Migrated to Ginkgo 2.33.1 with a managed Go tool directive and ordered scenario containers. Registered kubeconfig flags before test flag parsing, bounded exec operations, removed deprecated GCP authentication, and made coverage generation a single valid profile.
+- LocalPV setup uses its verified 4.6.0 chart. NFS setup uses the local Helm chart and loaded CI images without editing source manifests. Integration tests support both the Helm and raw controller container names.
+- Preserved the external Ansible runner using a pinned Python 3.14 image, ansible-core 2.21.5, kubernetes.core 6.6.0, kubernetes client 37.0.1, and checksummed kubectl 1.37.1. Updated removed modules and failure propagation. Both entry playbooks pass syntax checks; legacy variable-name warnings and runtime coverage remain for Linux execution.
+- Verified that the old NFS Helm repository returns 404. Upgrade fixtures now extract the immutable 0.11.0 chart revision from full Git history instead of depending on that URL.
+- Unit tests with coverage, vet, chart regressions, license checks, workflow actionlint, YAML parsing, shell syntax checks, integration compilation, and a Ginkgo dry run registering 132 specs pass locally. The dry run performs no cluster validation. The production vulnerability scan still reports no findings.
+- Remote CI has not been dispatched or observed. Linux cluster/image checks remain pending; the workflow configuration itself does not establish support or release readiness.
